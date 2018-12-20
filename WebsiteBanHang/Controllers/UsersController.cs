@@ -111,7 +111,7 @@ namespace WebsiteBanHang.Controllers
                 //_context.User.Add(user);
                 await _context.SaveChangesAsync();
                 await _userManager.AddToRoleAsync(userIdentity, "Member");
-                return new OkObjectResult("Account Created");
+                return StatusCode(204);
             }
             //return CreatedAtAction("GetUser", new { id = user.Id }, user);
         }

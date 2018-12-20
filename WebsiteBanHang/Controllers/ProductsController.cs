@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
@@ -22,14 +23,28 @@ namespace WebsiteBanHang.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public IEnumerable<Products> GetProducts()
+        public IEnumerable<Products> GetAllProducts()
         {
             return _context.Products;
         }
 
+        [HttpGet]
+        public IQueryable<ViewModelProduct> GetIndexProducts()
+        {
+            return _context.Products.Where(u => u.DisplayIndex != true).Select(item => new ViewModelProduct
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                UnitPrice = item.UnitPrice,
+                Discount = item.Discount,
+                Image = item.Image,
+                Rate = item.Rate
+            });
+        }
+
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProducts([FromRoute] int id)
+        public async Task<IActionResult> GetProductById([FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
@@ -59,7 +74,7 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest();
             }
-
+            products.DateUpdated = DateTime.Now;
             _context.Entry(products).State = EntityState.Modified;
 
             try
@@ -89,7 +104,8 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            products.ProductId = 0;
+            products.DateUpdated = DateTime.Now;
             _context.Products.Add(products);
             await _context.SaveChangesAsync();
 

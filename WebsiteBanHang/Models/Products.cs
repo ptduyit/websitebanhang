@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
@@ -22,13 +23,17 @@ namespace WebsiteBanHang.Models
         public int? Stock { get; set; }
         public string Description { get; set; }
         public string Image { get; set; }
-        public byte? Guarantee { get; set; }
+        public int? Guarantee { get; set; }
         public DateTime? DateUpdated { get; set; }
         public double? Rate { get; set; }
-
+        public bool? DisplayIndex { get; set; }
+        [JsonIgnore]
         public ProductCategories Category { get; set; }
+        [JsonIgnore]
         public ICollection<OrderDetails> OrderDetails { get; set; }
+        [JsonIgnore]
         public ICollection<OrderImportGoodsDetails> OrderImportGoodsDetails { get; set; }
+        [JsonIgnore]
         public ICollection<Replies> Replies { get; set; }
     }
 }

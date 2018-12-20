@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
@@ -22,8 +23,9 @@ namespace WebsiteBanHang.Models
         public string ApartmentNumber { get; set; }
         public decimal? TotalPrice { get; set; }
         public Guid? UserId { get; set; }
-
+        [JsonIgnore]
         public UserInfo User { get; set; }
+        [JsonIgnore]
         public ICollection<OrderDetails> OrderDetails { get; set; }
     }
 }

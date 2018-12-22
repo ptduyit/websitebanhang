@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
@@ -10,6 +11,7 @@ namespace WebsiteBanHang.Models
             AddressNavigation = new HashSet<Address>();
             Orders = new HashSet<Orders>();
             Replies = new HashSet<Replies>();
+            CartDetails = new HashSet<CartDetails>();
         }
 
         public string FullName { get; set; }
@@ -24,5 +26,7 @@ namespace WebsiteBanHang.Models
         public ICollection<Address> AddressNavigation { get; set; }
         public ICollection<Orders> Orders { get; set; }
         public ICollection<Replies> Replies { get; set; }
+        [JsonIgnore]
+        public ICollection<CartDetails> CartDetails { get; set; }
     }
 }

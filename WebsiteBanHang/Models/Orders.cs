@@ -25,7 +25,7 @@ namespace WebsiteBanHang.Models
         public Guid? UserId { get; set; }
         [JsonIgnore]
         public UserInfo User { get; set; }
-        [JsonIgnore]
+
         public ICollection<OrderDetails> OrderDetails { get; set; }
     }
 }

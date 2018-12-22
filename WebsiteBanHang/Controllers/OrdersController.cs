@@ -29,38 +29,41 @@ namespace WebsiteBanHang.Controllers
 
         // GET: api/Orders/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrderById([FromRoute] int id)
+        public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
+            
             var orders = await _context.Orders.FindAsync(id);
-
+            
             if (orders == null)
             {
                 return NotFound();
             }
+            orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
 
             return Ok(orders);
         }
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetCartId([FromRoute] Guid id)
+        public async Task<IActionResult> GetOrderByIdUser([FromRoute] Guid id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var orders = await _context.Orders.Where(e => e.UserId == id && e.Status == 1)
-                .Select( item => new { item.OrderId, item.UserId }).ToListAsync();
+
+            var orders = await _context.Orders.Select(o=>o).Include(a => a.OrderDetails).Where(e => e.UserId == id).ToListAsync();
+
             if (orders == null)
             {
                 return NotFound();
             }
+            //orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
+
             return Ok(orders);
         }
-
         // PUT: api/Orders/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutOrders([FromRoute] int id, [FromBody] Orders orders)
@@ -100,15 +103,22 @@ namespace WebsiteBanHang.Controllers
         [HttpPost]
         public async Task<IActionResult> PostOrders([FromBody] Orders orders)
         {
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
             orders.OrderId = 0;
             _context.Orders.Add(orders);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetOrders", new { id = orders.OrderId }, orders);
+            var success = await _context.SaveChangesAsync();
+            CartDetailsController cartDetails = new CartDetailsController(_context);
+            if(success > 0 && orders.UserId != null)
+            {
+                await cartDetails.DeleteCart(orders.UserId ?? new Guid());
+            }
+            
+            //return CreatedAtAction("GetOrders", new { id = orders.OrderId }, orders);
+            return Ok(orders);
         }
 
         // DELETE: api/Orders/5

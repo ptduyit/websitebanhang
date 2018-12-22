@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang.Migrations
 {
     [DbContext(typeof(SaleDBContext))]
-    partial class SaleDBContextModelSnapshot : ModelSnapshot
+    [Migration("20181220081134_AddCart")]
+    partial class AddCart
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -159,15 +161,30 @@ namespace WebsiteBanHang.Migrations
                     b.ToTable("Address");
                 });
 
+            modelBuilder.Entity("WebsiteBanHang.Models.Cart", b =>
+                {
+                    b.Property<int>("CartId")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<Guid>("UserId");
+
+                    b.HasKey("CartId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Cart");
+                });
+
             modelBuilder.Entity("WebsiteBanHang.Models.CartDetails", b =>
                 {
-                    b.Property<Guid>("UserId");
+                    b.Property<int>("CartId");
 
                     b.Property<int>("ProductId");
 
                     b.Property<int>("Quantity");
 
-                    b.HasKey("UserId", "ProductId");
+                    b.HasKey("CartId", "ProductId");
 
                     b.HasIndex("ProductId");
 
@@ -607,17 +624,26 @@ namespace WebsiteBanHang.Migrations
                         .HasConstraintName("FK_Address_UserInfo");
                 });
 
+            modelBuilder.Entity("WebsiteBanHang.Models.Cart", b =>
+                {
+                    b.HasOne("WebsiteBanHang.Models.UserInfo", "User")
+                        .WithMany("Cart")
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK_Cart_UserInfo")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("WebsiteBanHang.Models.CartDetails", b =>
                 {
+                    b.HasOne("WebsiteBanHang.Models.Cart", "Cart")
+                        .WithMany("CartDetails")
+                        .HasForeignKey("CartId")
+                        .HasConstraintName("FK_CartDetails_Cart");
+
                     b.HasOne("WebsiteBanHang.Models.Products", "Product")
                         .WithMany("CartDetails")
                         .HasForeignKey("ProductId")
                         .HasConstraintName("FK_CartDetails_Products");
-
-                    b.HasOne("WebsiteBanHang.Models.UserInfo", "UserInfo")
-                        .WithMany("CartDetails")
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("FK_CartDetails_UserInfo");
                 });
 
             modelBuilder.Entity("WebsiteBanHang.Models.OrderDetails", b =>

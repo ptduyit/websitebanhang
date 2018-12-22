@@ -31,7 +31,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet]
         public IQueryable<ViewModelProduct> GetIndexProducts()
         {
-            return _context.Products.Where(u => u.DisplayIndex != true).Select(item => new ViewModelProduct
+            return _context.Products.Where(u => u.DisplayIndex == true && u.Discontinued != true).Select(item => new ViewModelProduct
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,

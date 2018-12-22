@@ -41,15 +41,15 @@ namespace WebsiteBanHang.Controllers
             return StatusCode(200);
         }
         // GET: api/OrderDetails/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrderDetails([FromRoute] int id)
+        [HttpGet("{orderId}/{productId}")]
+        public async Task<IActionResult> GetOrderDetails([FromRoute] int orderId, [FromRoute] int productId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var orderDetails = await _context.OrderDetails.FindAsync(id);
+            var orderDetails = await _context.OrderDetails.FirstOrDefaultAsync(e => e.OrderId == orderId && e.ProductId == productId);
 
             if (orderDetails == null)
             {
@@ -59,16 +59,33 @@ namespace WebsiteBanHang.Controllers
             return Ok(orderDetails);
         }
 
-        // PUT: api/OrderDetails/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrderDetails([FromRoute] int id, [FromBody] OrderDetails orderDetails)
+        [HttpGet("{orderId}")]
+        public async Task<IActionResult> GetOrderDetailsById([FromRoute] int orderId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != orderDetails.OrderId)
+            var orderDetails = await _context.OrderDetails.Where(e => e.OrderId == orderId).ToListAsync();
+
+            if (orderDetails == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(orderDetails);
+        }
+        // PUT: api/OrderDetails/5
+        [HttpPut("{orderId}/{productId}")]
+        public async Task<IActionResult> PutOrderDetails([FromRoute] int orderId, [FromRoute] int productId, [FromBody] OrderDetails orderDetails)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (orderId != orderDetails.OrderId)
             {
                 return BadRequest();
             }
@@ -81,7 +98,7 @@ namespace WebsiteBanHang.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!OrderDetailsExists(id))
+                if (!OrderDetailsExists(orderId, productId))
                 {
                     return NotFound();
                 }
@@ -102,7 +119,18 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest(ModelState);
             }
+            if (OrderDetailsExists(orderDetails.OrderId, orderDetails.ProductId))
+            {
+                OrderDetails orderdetail = await _context.OrderDetails
+                    .Where(e => e.OrderId == orderDetails.OrderId && e.ProductId == orderDetails.ProductId).SingleOrDefaultAsync();
+                if(orderdetail != null)
+                {
+                    ++orderdetail.Quantity;
+                    orderdetail.UnitPrice = GetPriceProduct(orderDetails.ProductId);
 
+                }
+                
+            }
             _context.OrderDetails.Add(orderDetails);
             try
             {
@@ -110,7 +138,7 @@ namespace WebsiteBanHang.Controllers
             }
             catch (DbUpdateException)
             {
-                if (OrderDetailsExists(orderDetails.OrderId))
+                if (OrderDetailsExists(orderDetails.OrderId,orderDetails.ProductId))
                 {
                     return new StatusCodeResult(StatusCodes.Status409Conflict);
                 }
@@ -124,15 +152,15 @@ namespace WebsiteBanHang.Controllers
         }
 
         // DELETE: api/OrderDetails/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrderDetails([FromRoute] int id)
+        [HttpDelete("{orderId}/{productId}")]
+        public async Task<IActionResult> DeleteOrderDetails([FromRoute] int orderId, [FromRoute] int productId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var orderDetails = await _context.OrderDetails.FindAsync(id);
+            var orderDetails = await _context.OrderDetails.FirstOrDefaultAsync(e => e.OrderId == orderId && e.ProductId == productId);
             if (orderDetails == null)
             {
                 return NotFound();
@@ -144,9 +172,13 @@ namespace WebsiteBanHang.Controllers
             return Ok(orderDetails);
         }
 
-        private bool OrderDetailsExists(int id)
+        private bool OrderDetailsExists(int orderId, int productId)
         {
-            return _context.OrderDetails.Any(e => e.OrderId == id);
+            return _context.OrderDetails.Any(e => e.OrderId == orderId && e.ProductId == productId);
+        }
+        private decimal GetPriceProduct(int productId)
+        {
+            return (decimal)_context.Products.Where(e => e.ProductId == productId).Select(i => i.UnitPrice).FirstOrDefault();
         }
     }
 }

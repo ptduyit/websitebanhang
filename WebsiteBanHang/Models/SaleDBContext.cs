@@ -118,6 +118,23 @@ namespace WebsiteBanHang.Models
                     .HasConstraintName("FK_OrderDetails_Products");
             });
 
+            modelBuilder.Entity<CartDetails>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.ProductId });
+
+                entity.HasOne(d => d.UserInfo)
+                    .WithMany(p => p.CartDetails)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CartDetails_UserInfo");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.CartDetails)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CartDetails_Products");
+            });
+
             modelBuilder.Entity<OrderImportGoodsDetails>(entity =>
             {
                 entity.HasKey(e => new { e.OrderId, e.ProductId });
@@ -333,5 +350,8 @@ namespace WebsiteBanHang.Models
 
         
         public virtual DbSet<User> User { get; set; }
+
+        
+        public DbSet<WebsiteBanHang.Models.CartDetails> CartDetails { get; set; }
     }
 }

@@ -11,6 +11,7 @@ namespace WebsiteBanHang.Models
             OrderDetails = new HashSet<OrderDetails>();
             OrderImportGoodsDetails = new HashSet<OrderImportGoodsDetails>();
             Replies = new HashSet<Replies>();
+            CartDetails = new HashSet<CartDetails>();
         }
 
         public int ProductId { get; set; }
@@ -35,5 +36,7 @@ namespace WebsiteBanHang.Models
         public ICollection<OrderImportGoodsDetails> OrderImportGoodsDetails { get; set; }
         [JsonIgnore]
         public ICollection<Replies> Replies { get; set; }
+        [JsonIgnore]
+        public ICollection<CartDetails> CartDetails { get; set; }
     }
 }

@@ -26,7 +26,42 @@ namespace WebsiteBanHang.Controllers
         {
             return _context.Orders;
         }
+        [HttpGet("{status}")]
+        public IEnumerable<Orders> GetConfirmOrders([FromRoute] int status)
+        {
+            return _context.Orders.Where(e => e.Status == status).ToList();
+        }
+        [HttpPut("{id}/{status}")]
+        public async Task<IActionResult> PutConfirmOrders([FromRoute] int id, [FromRoute] int status)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            Orders orders = _context.Orders.Where(o => o.OrderId == id).SingleOrDefault();
+            orders.Status = status;
+            _context.Entry(orders).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!OrdersExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
@@ -54,7 +89,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var orders = await _context.Orders.Select(o=>o).Include(a => a.OrderDetails).Where(e => e.UserId == id).ToListAsync();
+            var orders = await _context.Orders.Select(o=>o).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.UserId == id).ToListAsync();
 
             if (orders == null)
             {

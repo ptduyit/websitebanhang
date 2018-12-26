@@ -31,7 +31,7 @@ namespace WebsiteBanHang.Models
         public virtual DbSet<SlideShow> SlideShow { get; set; }
         public virtual DbSet<Suppliers> Suppliers { get; set; }
         public virtual DbSet<UserInfo> UserInfo { get; set; }
-
+        public virtual DbSet<ProductImages> ProductImagse { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -133,6 +133,16 @@ namespace WebsiteBanHang.Models
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CartDetails_Products");
+            });
+
+            modelBuilder.Entity<ProductImages>(entity =>
+            {
+                entity.HasKey(e => e.ImageId);
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductImage)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_ProductImages_Products");
             });
 
             modelBuilder.Entity<OrderImportGoodsDetails>(entity =>

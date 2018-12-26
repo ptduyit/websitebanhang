@@ -16,7 +16,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [EnableCors("AllowAll")]
+    
     [Route("api/[controller]")]
     [ApiController]
     public class LoginController : Controller

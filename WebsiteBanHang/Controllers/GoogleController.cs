@@ -18,45 +18,32 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FacebookController : Controller
+    public class GoogleController : ControllerBase
     {
         private readonly SaleDBContext _appDbContext;
         private readonly UserManager<User> _userManager;
-        private readonly FacebookAuthSettings _fbAuthSettings;
+        private readonly GoogleAuthSettings _ggAuthSettings;
         private readonly IJwtFactory _jwtFactory;
         private readonly JwtIssuerOptions _jwtOptions;
         private static readonly HttpClient Client = new HttpClient();
-
-        public FacebookController(IOptions<FacebookAuthSettings> fbAuthSettingsAccessor, UserManager<User> userManager, SaleDBContext appDbContext, IJwtFactory jwtFactory, IOptions<JwtIssuerOptions> jwtOptions)
+        public GoogleController( IOptions<GoogleAuthSettings> ggAuthSettings, UserManager<User> userManager, SaleDBContext appDbContext, IJwtFactory jwtFactory, IOptions<JwtIssuerOptions> jwtOptions)
         {
-            _fbAuthSettings = fbAuthSettingsAccessor.Value;
             _userManager = userManager;
             _appDbContext = appDbContext;
             _jwtFactory = jwtFactory;
             _jwtOptions = jwtOptions.Value;
+            _ggAuthSettings = ggAuthSettings.Value;
         }
 
-        // POST api/externalauth/facebook
         [HttpPost]
-        public async Task<IActionResult> Facebook([FromBody]AccessTokenViewModel model)
+        public async Task<IActionResult> Post([FromBody]AccessTokenViewModel model)
         {
-            // 1.generate an app access token
-            var appAccessTokenResponse = await Client.GetStringAsync($"https://graph.facebook.com/oauth/access_token?client_id=1194855687339141&client_secret=57fc45e97a3cca866379f243be7cbcce&grant_type=client_credentials");/*($"https://graph.facebook.com/oauth/access_token?client_id={_fbAuthSettings.AppId}&client_secret={_fbAuthSettings.AppSecret}&grant_type=client_credentials");*/
-            var appAccessToken = JsonConvert.DeserializeObject<FacebookAppAccessToken>(appAccessTokenResponse);
-            // 2. validate the user access token
-            var userAccessTokenValidationResponse = await Client.GetStringAsync($"https://graph.facebook.com/debug_token?input_token={model.AccessToken}&access_token={appAccessToken.AccessToken}");
-            var userAccessTokenValidation = JsonConvert.DeserializeObject<FacebookUserAccessTokenValidation>(userAccessTokenValidationResponse);
-
-            if (!userAccessTokenValidation.Data.IsValid)
+            var userInfoResponse = await Client.GetStringAsync($"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={model.AccessToken}");
+            var userInfo = JsonConvert.DeserializeObject<GoogleUserData>(userInfoResponse);
+            if(!string.Equals(userInfo.ClientId, _ggAuthSettings.ClientId))
             {
-                return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid facebook token.", ModelState));
+                return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid google token.", ModelState));
             }
-
-            // 3. we've got a valid token so we can request user data from fb
-            var userInfoResponse = await Client.GetStringAsync($"https://graph.facebook.com/v3.2/me?fields=id,email,name,gender,birthday&access_token={model.AccessToken}");
-            var userInfo = JsonConvert.DeserializeObject<FacebookUserData>(userInfoResponse);
-
-            // 4. ready to create the local user account (if necessary) and jwt
             var user = await _userManager.FindByEmailAsync(userInfo.Email);
 
             if (user == null)
@@ -65,7 +52,6 @@ namespace WebsiteBanHang.Controllers
                 {
                     Email = userInfo.Email,
                     UserName = userInfo.Email,
-                    //PictureUrl = userInfo.Picture.Data.Url
                 };
 
                 var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));

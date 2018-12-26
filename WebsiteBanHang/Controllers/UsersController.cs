@@ -31,6 +31,7 @@ namespace WebsiteBanHang.Controllers
 
         // GET: api/Users
         //
+        [Authorize]
         [HttpGet]
         public IActionResult GetUser()
         {

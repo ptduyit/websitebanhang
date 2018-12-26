@@ -109,7 +109,7 @@ namespace WebsiteBanHang.Controllers
             _context.Products.Add(products);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProducts", new { id = products.ProductId }, products);
+            return CreatedAtAction("GetProductById", new { id = products.ProductId }, products);
         }
 
         // DELETE: api/Products/5

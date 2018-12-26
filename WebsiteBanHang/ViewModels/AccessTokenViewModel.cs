@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace WebsiteBanHang.ViewModels
 {
-    public class FacebookAuthViewModel
+    public class AccessTokenViewModel
     {
         public string AccessToken { get; set; }
     }

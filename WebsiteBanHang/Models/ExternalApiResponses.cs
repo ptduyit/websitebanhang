@@ -6,8 +6,15 @@ using System.Threading.Tasks;
 
 namespace WebsiteBanHang.Models
 {
-    public class FacebookApiResponses
+    public class ExternalApiResponses
     {
+        internal class GoogleUserData
+        {
+            public string Email { get; set; }
+            public string Name { get; set; }
+            [JsonProperty("aud")]
+            public string ClientId { get; set; }
+        }
         internal class FacebookUserData
         {
             public long Id { get; set; }

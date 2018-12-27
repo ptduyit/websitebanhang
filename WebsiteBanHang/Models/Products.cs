@@ -28,6 +28,7 @@ namespace WebsiteBanHang.Models
         public int? Guarantee { get; set; }
         public DateTime? DateUpdated { get; set; }
         public double? Rate { get; set; }
+        public string Summary { get; set; }
         public bool? DisplayIndex { get; set; }
         [JsonIgnore]
         public ProductCategories Category { get; set; }

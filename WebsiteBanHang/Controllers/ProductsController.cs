@@ -31,17 +31,36 @@ namespace WebsiteBanHang.Controllers
         [HttpGet]
         public IQueryable<ViewModelProduct> GetIndexProducts()
         {
-            return _context.Products.Where(u => u.DisplayIndex == true && u.Discontinued != true).Select(item => new ViewModelProduct
+            return _context.Products.Include(p => p.ProductImage).Where(u => u.DisplayIndex == true && u.Discontinued != true).Select(item => new ViewModelProduct
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
                 UnitPrice = item.UnitPrice,
                 Discount = item.Discount,
                 Image = item.Image,
-                Rate = item.Rate
+                Rate = item.Rate,
+                ProductImage = item.ProductImage
             });
         }
 
+        [HttpGet("{id}")]
+        public IQueryable<ProductInformationViewModel> GetProductInformation([FromRoute] int id)
+        {
+            return _context.Products.Include(p => p.ProductImage).Where(p => p.ProductId == id).Select(i => new ProductInformationViewModel
+            {
+                ProductId = i.ProductId,
+                ProductName = i.ProductName,
+                UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
+                Image = i.Image,
+                Rate = i.Rate,
+                Description = i.Description,
+                Guarantee = i.Guarantee,
+                Stock = i.Stock,
+                Summary = i.Summary,
+                ProductImage = i.ProductImage
+            });
+        }
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById([FromRoute] int id)

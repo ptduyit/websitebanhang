@@ -10,8 +10,8 @@ using WebsiteBanHang.Models;
 namespace WebsiteBanHang.Migrations
 {
     [DbContext(typeof(SaleDBContext))]
-    [Migration("20181125094659_Initial")]
-    partial class Initial
+    [Migration("20181231102918_EmailUserInfo")]
+    partial class EmailUserInfo
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -85,9 +85,11 @@ namespace WebsiteBanHang.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.Property<string>("LoginProvider");
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128);
 
-                    b.Property<string>("ProviderKey");
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(128);
 
                     b.Property<string>("ProviderDisplayName");
 
@@ -117,9 +119,11 @@ namespace WebsiteBanHang.Migrations
                 {
                     b.Property<Guid>("UserId");
 
-                    b.Property<string>("LoginProvider");
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128);
 
-                    b.Property<string>("Name");
+                    b.Property<string>("Name")
+                        .HasMaxLength(128);
 
                     b.Property<string>("Value");
 
@@ -135,26 +139,47 @@ namespace WebsiteBanHang.Migrations
                         .HasColumnName("AddressID")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("ApartmentNumber")
-                        .HasMaxLength(50);
-
                     b.Property<string>("District")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
+
+                    b.Property<string>("FullName");
+
+                    b.Property<bool>("IsDefault");
+
+                    b.Property<string>("PhoneNumber");
 
                     b.Property<string>("Province")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<string>("Street")
+                        .HasMaxLength(256);
+
+                    b.Property<Guid>("UserId")
                         .HasColumnName("UserID");
 
                     b.Property<string>("Ward")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.HasKey("AddressId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Address");
+                });
+
+            modelBuilder.Entity("WebsiteBanHang.Models.CartDetails", b =>
+                {
+                    b.Property<Guid>("UserId");
+
+                    b.Property<int>("ProductId");
+
+                    b.Property<int>("Quantity");
+
+                    b.HasKey("UserId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("CartDetails");
                 });
 
             modelBuilder.Entity("WebsiteBanHang.Models.Events", b =>
@@ -189,9 +214,9 @@ namespace WebsiteBanHang.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnName("ProductID");
 
-                    b.Property<int?>("Quantity");
+                    b.Property<int>("Quantity");
 
-                    b.Property<decimal?>("UnitPrice")
+                    b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18, 0)");
 
                     b.HasKey("OrderId", "ProductId");
@@ -209,9 +234,9 @@ namespace WebsiteBanHang.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnName("ProductID");
 
-                    b.Property<int?>("Quantity");
+                    b.Property<int>("Quantity");
 
-                    b.Property<decimal?>("UnitPrice")
+                    b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18, 0)");
 
                     b.HasKey("OrderId", "ProductId");
@@ -228,40 +253,42 @@ namespace WebsiteBanHang.Migrations
                         .HasColumnName("OrderID")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("ApartmentNumber")
-                        .HasMaxLength(50);
-
                     b.Property<string>("District")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.Property<string>("FullName")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.Property<DateTime?>("OrderDate")
                         .HasColumnType("datetime");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .IsUnicode(false);
 
                     b.Property<string>("Province")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.Property<DateTime?>("ShippedDate")
                         .HasColumnType("datetime");
 
-                    b.Property<int?>("Status");
+                    b.Property<int>("Status");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(256);
 
                     b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(18, 0)");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnName("UserID");
 
                     b.Property<string>("Ward")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
@@ -294,6 +321,19 @@ namespace WebsiteBanHang.Migrations
                     b.ToTable("OrdersImportGoods");
                 });
 
+            modelBuilder.Entity("WebsiteBanHang.Models.OrderStatuses", b =>
+                {
+                    b.Property<int>("StatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("StatusName");
+
+                    b.HasKey("StatusId");
+
+                    b.ToTable("OrderStatuses");
+                });
+
             modelBuilder.Entity("WebsiteBanHang.Models.ProductCategories", b =>
                 {
                     b.Property<int>("CategoryId")
@@ -302,11 +342,28 @@ namespace WebsiteBanHang.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("CategoryName")
-                        .HasMaxLength(200);
+                        .HasMaxLength(256);
 
                     b.HasKey("CategoryId");
 
                     b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("WebsiteBanHang.Models.ProductImages", b =>
+                {
+                    b.Property<int>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("ProductId");
+
+                    b.Property<string>("Url");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImagse");
                 });
 
             modelBuilder.Entity("WebsiteBanHang.Models.Products", b =>
@@ -316,36 +373,40 @@ namespace WebsiteBanHang.Migrations
                         .HasColumnName("ProductID")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnName("CategoryID");
 
-                    b.Property<DateTime?>("DateUpdated")
+                    b.Property<DateTime>("DateUpdated")
                         .HasColumnType("datetime");
 
                     b.Property<string>("Description")
                         .HasColumnType("ntext");
 
-                    b.Property<bool?>("Discontinued");
+                    b.Property<bool>("Discontinued");
 
-                    b.Property<double?>("Discount");
+                    b.Property<double>("Discount");
 
-                    b.Property<byte?>("Guarantee");
+                    b.Property<bool>("DisplayIndex");
+
+                    b.Property<int>("Guarantee");
 
                     b.Property<string>("Image")
                         .HasMaxLength(100)
                         .IsUnicode(false);
 
-                    b.Property<decimal?>("ImportPrice")
+                    b.Property<decimal>("ImportPrice")
                         .HasColumnType("decimal(18, 0)");
 
                     b.Property<string>("ProductName")
-                        .HasMaxLength(200);
+                        .HasMaxLength(256);
 
-                    b.Property<double?>("Rate");
+                    b.Property<double>("Rate");
 
-                    b.Property<int?>("Stock");
+                    b.Property<int>("Stock");
 
-                    b.Property<decimal?>("UnitPrice")
+                    b.Property<string>("Summary");
+
+                    b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18, 0)");
 
                     b.HasKey("ProductId");
@@ -402,10 +463,10 @@ namespace WebsiteBanHang.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Image")
-                        .HasMaxLength(100);
+                        .HasMaxLength(256);
 
                     b.Property<string>("Link")
-                        .HasMaxLength(100);
+                        .HasMaxLength(256);
 
                     b.Property<bool?>("Status");
 
@@ -494,6 +555,10 @@ namespace WebsiteBanHang.Migrations
                         .HasName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasFilter("[PhoneNumber] IS NOT NULL");
+
                     b.ToTable("AspNetUsers");
                 });
 
@@ -502,17 +567,11 @@ namespace WebsiteBanHang.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnName("UserID");
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(50);
-
                     b.Property<DateTime?>("BirthDate")
                         .HasColumnType("datetime");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(50);
-
                     b.Property<string>("FullName")
-                        .HasMaxLength(50);
+                        .HasMaxLength(256);
 
                     b.Property<bool?>("Gender");
 
@@ -521,11 +580,6 @@ namespace WebsiteBanHang.Migrations
                         .IsUnicode(false);
 
                     b.HasKey("UserId");
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasName("IX_UserInfo")
-                        .HasFilter("[Email] IS NOT NULL");
 
                     b.HasIndex("Phone")
                         .IsUnique()
@@ -583,9 +637,25 @@ namespace WebsiteBanHang.Migrations
             modelBuilder.Entity("WebsiteBanHang.Models.Address", b =>
                 {
                     b.HasOne("WebsiteBanHang.Models.UserInfo", "User")
-                        .WithMany("AddressNavigation")
+                        .WithMany("Address")
                         .HasForeignKey("UserId")
-                        .HasConstraintName("FK_Address_UserInfo");
+                        .HasConstraintName("FK_Address_UserInfo")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("WebsiteBanHang.Models.CartDetails", b =>
+                {
+                    b.HasOne("WebsiteBanHang.Models.Products", "Product")
+                        .WithMany("CartDetails")
+                        .HasForeignKey("ProductId")
+                        .HasConstraintName("FK_CartDetails_Products")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("WebsiteBanHang.Models.UserInfo", "UserInfo")
+                        .WithMany("CartDetails")
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK_CartDetails_UserInfo")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("WebsiteBanHang.Models.OrderDetails", b =>
@@ -593,7 +663,8 @@ namespace WebsiteBanHang.Migrations
                     b.HasOne("WebsiteBanHang.Models.Orders", "Order")
                         .WithMany("OrderDetails")
                         .HasForeignKey("OrderId")
-                        .HasConstraintName("FK_OrderDetails_Orders");
+                        .HasConstraintName("FK_OrderDetails_Orders")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("WebsiteBanHang.Models.Products", "Product")
                         .WithMany("OrderDetails")
@@ -616,6 +687,11 @@ namespace WebsiteBanHang.Migrations
 
             modelBuilder.Entity("WebsiteBanHang.Models.Orders", b =>
                 {
+                    b.HasOne("WebsiteBanHang.Models.OrderStatuses", "OrderStatus")
+                        .WithMany("Orders")
+                        .HasForeignKey("Status")
+                        .HasConstraintName("FK_Orders_OrderStatuses");
+
                     b.HasOne("WebsiteBanHang.Models.UserInfo", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -630,12 +706,22 @@ namespace WebsiteBanHang.Migrations
                         .HasConstraintName("FK_OrdersImportGoods_Suppliers");
                 });
 
+            modelBuilder.Entity("WebsiteBanHang.Models.ProductImages", b =>
+                {
+                    b.HasOne("WebsiteBanHang.Models.Products", "Product")
+                        .WithMany("ProductImage")
+                        .HasForeignKey("ProductId")
+                        .HasConstraintName("FK_ProductImages_Products")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("WebsiteBanHang.Models.Products", b =>
                 {
                     b.HasOne("WebsiteBanHang.Models.ProductCategories", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
-                        .HasConstraintName("FK_Products_ProductCategories");
+                        .HasConstraintName("FK_Products_ProductCategories")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("WebsiteBanHang.Models.Replies", b =>
@@ -661,7 +747,8 @@ namespace WebsiteBanHang.Migrations
                     b.HasOne("WebsiteBanHang.Models.User", "User")
                         .WithOne("UserInfo")
                         .HasForeignKey("WebsiteBanHang.Models.UserInfo", "UserId")
-                        .HasConstraintName("FK_UserInfo_Account");
+                        .HasConstraintName("FK_UserInfo_Account")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }

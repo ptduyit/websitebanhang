@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
 {
-    public partial class User : IdentityUser<Guid>
+    public class User : IdentityUser<Guid>
     {
         //public string Username { get; set; }
         //public string Password { get; set; }

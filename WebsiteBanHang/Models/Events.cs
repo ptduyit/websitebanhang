@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
 {
-    public partial class Events
+    public class Events
     {
         public int EventId { get; set; }
         public string Title { get; set; }

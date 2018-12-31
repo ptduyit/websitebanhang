@@ -149,7 +149,7 @@ namespace WebsiteBanHang.Controllers
             CartDetailsController cartDetails = new CartDetailsController(_context);
             if(success > 0 && orders.UserId != null)
             {
-                await cartDetails.DeleteCart(orders.UserId ?? new Guid());
+                await cartDetails.DeleteCart(orders.UserId);
             }
             
             //return CreatedAtAction("GetOrders", new { id = orders.OrderId }, orders);

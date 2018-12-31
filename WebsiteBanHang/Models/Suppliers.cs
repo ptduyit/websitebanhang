@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
 {
-    public partial class Suppliers
+    public class Suppliers
     {
         public Suppliers()
         {

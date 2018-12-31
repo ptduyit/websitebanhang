@@ -17,7 +17,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using WebsiteBanHang.Auth;
 using WebsiteBanHang.Helpers;
 using WebsiteBanHang.Models;
 
@@ -40,12 +39,6 @@ namespace WebsiteBanHang
             services.AddDbContext<SaleDBContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-
-            //services.AddDefaultIdentity<User>().AddRoles<IdentityRole>().AddEntityFrameworkStores<SaleDBContext>();
-            //services.AddIdentityCore<User>()
-            //    .AddEntityFrameworkStores<SaleDBContext>()
-            //    .AddDefaultUI()
-            //    .AddDefaultTokenProviders();
 
             var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
 
@@ -83,15 +76,6 @@ namespace WebsiteBanHang
                 configureOptions.TokenValidationParameters = tokenValidationParameters;
                 configureOptions.SaveToken = true;
             });
-
-            
-
-            // api user claim policy
-            //services.AddAuthorization(options =>
-            //{
-            //    options.AddPolicy("ApiUser", policy => policy.RequireClaim(Constants.Strings.JwtClaimIdentifiers.Rol, Constants.Strings.JwtClaims.ApiAccess));
-            //});
-            services.AddSingleton<IJwtFactory, JwtFactory>();
 
             // add identity
             var builder = services.AddDefaultIdentity<User>(o =>
@@ -165,13 +149,12 @@ namespace WebsiteBanHang
             //Here you could create a super user who will maintain the web app
             var poweruser = new User
             {
-
-                UserName = "nhotuoitho97@gmail.com",//Configuration["UserSettings:UserEmail"],
-                Email = "nhotuoitho97@gmail.com"
+                UserName = "admin@gmail.com",//Configuration["UserSettings:UserEmail"],
+                Email = "admin@gmail.com"
             };
             //Ensure you have these values in your appsettings.json file
             string userPWD = "123123123";//Configuration["UserSettings:UserPassword"];
-            Task<User> _user = UserManager.FindByEmailAsync("nhotuoitho97@gmail.com");//Configuration["UserSettings:UserEmail"]);
+            Task<User> _user = UserManager.FindByEmailAsync("admin@gmail.com");//Configuration["UserSettings:UserEmail"]);
             _user.Wait();
 
             if (_user.Result == null)
@@ -182,7 +165,6 @@ namespace WebsiteBanHang
                     //here we tie the new user to the role
                     Task<IdentityResult> newUserRole = UserManager.AddToRoleAsync(poweruser, "Admin");
                     newUserRole.Wait();
-
                 }
             }
         }

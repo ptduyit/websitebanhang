@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
 {
-    public partial class SlideShow
+    public class SlideShow
     {
         public int SlideId { get; set; }
         public string Image { get; set; }

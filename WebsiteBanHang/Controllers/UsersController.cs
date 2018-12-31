@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebsiteBanHang.Helpers;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
@@ -21,12 +22,14 @@ namespace WebsiteBanHang.Controllers
         private readonly SaleDBContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
+        private readonly JwtIssuerOptions _jwtOptions;
 
-        public UsersController(UserManager<User> userManager, IMapper mapper, SaleDBContext context)
+        public UsersController(UserManager<User> userManager, IMapper mapper, SaleDBContext context, IOptions<JwtIssuerOptions> jwtOptions)
         {
             _context = context;
             _mapper = mapper;
             _userManager = userManager;
+            _jwtOptions = jwtOptions.Value;
         }
 
         // GET: api/Users
@@ -95,7 +98,7 @@ namespace WebsiteBanHang.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<IActionResult> PostUser([FromBody] RegistrationViewModel model)
+        public async Task<IActionResult> PostRegister([FromBody] RegistrationViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -103,18 +106,17 @@ namespace WebsiteBanHang.Controllers
             }
             var userIdentity = _mapper.Map<User>(model);
             var result = await _userManager.CreateAsync(userIdentity, model.Password);
-            if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
-            else
-            {
-                await _context.UserInfo.AddAsync(new UserInfo { UserId = userIdentity.Id, Phone = model.PhoneNumber, Email = model.Email, FullName = model.FullName });
+            if (!result.Succeeded) return new ConflictObjectResult(Errors.AddErrorsToModelState(result, ModelState));
+            await _context.UserInfo.AddAsync(new UserInfo { UserId = userIdentity.Id, Phone = model.PhoneNumber, FullName = model.FullName });
+            await _context.SaveChangesAsync();
+            await _userManager.AddToRoleAsync(userIdentity, "Member");
 
+            var localUserInfo = await _context.UserInfo.FindAsync(userIdentity.Id);
 
-                //_context.User.Add(user);
-                await _context.SaveChangesAsync();
-                await _userManager.AddToRoleAsync(userIdentity, "Member");
-                return StatusCode(204);
-            }
-            //return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            var jwt = await Tokens.GenerateJwt(userIdentity, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
+
+            return new OkObjectResult(jwt);
+            
         }
 
         // DELETE: api/Users/5

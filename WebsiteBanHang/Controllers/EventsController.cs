@@ -10,7 +10,6 @@ using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class EventsController : ControllerBase

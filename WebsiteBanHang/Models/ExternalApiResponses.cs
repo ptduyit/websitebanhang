@@ -8,6 +8,13 @@ namespace WebsiteBanHang.Models
 {
     public class ExternalApiResponses
     {
+        internal class UserData
+        {
+            public string Email { get; set; }
+            public string Name { get; set; }
+            [JsonProperty("aud")]
+            public string ClientId { get; set; }
+        }
         internal class GoogleUserData
         {
             public string Email { get; set; }

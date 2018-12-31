@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace WebsiteBanHang.Migrations
 {
-    public partial class Initial : Migration
+    public partial class FirstDatabase : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -65,12 +65,25 @@ namespace WebsiteBanHang.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderStatuses",
+                columns: table => new
+                {
+                    StatusId = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    StatusName = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderStatuses", x => x.StatusId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProductCategories",
                 columns: table => new
                 {
                     CategoryID = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    CategoryName = table.Column<string>(maxLength: 200, nullable: true)
+                    CategoryName = table.Column<string>(maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -83,9 +96,9 @@ namespace WebsiteBanHang.Migrations
                 {
                     SlideID = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Image = table.Column<string>(maxLength: 100, nullable: true),
+                    Image = table.Column<string>(maxLength: 256, nullable: true),
                     Status = table.Column<bool>(nullable: true),
-                    Link = table.Column<string>(maxLength: 100, nullable: true)
+                    Link = table.Column<string>(maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -156,8 +169,8 @@ namespace WebsiteBanHang.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(nullable: false),
-                    ProviderKey = table.Column<string>(nullable: false),
+                    LoginProvider = table.Column<string>(maxLength: 128, nullable: false),
+                    ProviderKey = table.Column<string>(maxLength: 128, nullable: false),
                     ProviderDisplayName = table.Column<string>(nullable: true),
                     UserId = table.Column<Guid>(nullable: false)
                 },
@@ -201,8 +214,8 @@ namespace WebsiteBanHang.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(nullable: false),
-                    LoginProvider = table.Column<string>(nullable: false),
-                    Name = table.Column<string>(nullable: false),
+                    LoginProvider = table.Column<string>(maxLength: 128, nullable: false),
+                    Name = table.Column<string>(maxLength: 128, nullable: false),
                     Value = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -220,10 +233,9 @@ namespace WebsiteBanHang.Migrations
                 name: "UserInfo",
                 columns: table => new
                 {
-                    FullName = table.Column<string>(maxLength: 50, nullable: true),
-                    Email = table.Column<string>(maxLength: 50, nullable: true),
+                    FullName = table.Column<string>(maxLength: 256, nullable: true),
+                    Email = table.Column<string>(maxLength: 256, nullable: true),
                     Phone = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
-                    Address = table.Column<string>(maxLength: 50, nullable: true),
                     BirthDate = table.Column<DateTime>(type: "datetime", nullable: true),
                     Gender = table.Column<bool>(nullable: true),
                     UserID = table.Column<Guid>(nullable: false)
@@ -236,7 +248,7 @@ namespace WebsiteBanHang.Migrations
                         column: x => x.UserID,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -245,18 +257,20 @@ namespace WebsiteBanHang.Migrations
                 {
                     ProductID = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    ProductName = table.Column<string>(maxLength: 200, nullable: true),
-                    CategoryID = table.Column<int>(nullable: true),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true),
-                    ImportPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true),
-                    Discontinued = table.Column<bool>(nullable: true),
-                    Discount = table.Column<double>(nullable: true),
-                    Stock = table.Column<int>(nullable: true),
+                    ProductName = table.Column<string>(maxLength: 256, nullable: true),
+                    CategoryID = table.Column<int>(nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
+                    ImportPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
+                    Discontinued = table.Column<bool>(nullable: false),
+                    Discount = table.Column<double>(nullable: false),
+                    Stock = table.Column<int>(nullable: false),
                     Description = table.Column<string>(type: "ntext", nullable: true),
                     Image = table.Column<string>(unicode: false, maxLength: 100, nullable: true),
-                    Guarantee = table.Column<byte>(nullable: true),
-                    DateUpdated = table.Column<DateTime>(type: "datetime", nullable: true),
-                    Rate = table.Column<double>(nullable: true)
+                    Guarantee = table.Column<int>(nullable: false),
+                    DateUpdated = table.Column<DateTime>(type: "datetime", nullable: false),
+                    Rate = table.Column<double>(nullable: false),
+                    Summary = table.Column<string>(nullable: true),
+                    DisplayIndex = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -266,7 +280,7 @@ namespace WebsiteBanHang.Migrations
                         column: x => x.CategoryID,
                         principalTable: "ProductCategories",
                         principalColumn: "CategoryID",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -297,11 +311,14 @@ namespace WebsiteBanHang.Migrations
                 {
                     AddressID = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Province = table.Column<string>(maxLength: 50, nullable: true),
-                    District = table.Column<string>(maxLength: 50, nullable: true),
-                    Ward = table.Column<string>(maxLength: 50, nullable: true),
-                    ApartmentNumber = table.Column<string>(maxLength: 50, nullable: true),
-                    UserID = table.Column<Guid>(nullable: true)
+                    FullName = table.Column<string>(nullable: true),
+                    PhoneNumber = table.Column<string>(nullable: true),
+                    Province = table.Column<string>(maxLength: 256, nullable: true),
+                    District = table.Column<string>(maxLength: 256, nullable: true),
+                    Ward = table.Column<string>(maxLength: 256, nullable: true),
+                    Street = table.Column<string>(maxLength: 256, nullable: true),
+                    IsDefault = table.Column<bool>(nullable: false),
+                    UserID = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -311,7 +328,7 @@ namespace WebsiteBanHang.Migrations
                         column: x => x.UserID,
                         principalTable: "UserInfo",
                         principalColumn: "UserID",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -322,25 +339,76 @@ namespace WebsiteBanHang.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     OrderDate = table.Column<DateTime>(type: "datetime", nullable: true),
                     ShippedDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    Status = table.Column<int>(nullable: true),
-                    Phone = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
-                    FullName = table.Column<string>(maxLength: 50, nullable: true),
-                    Province = table.Column<string>(maxLength: 50, nullable: true),
-                    District = table.Column<string>(maxLength: 50, nullable: true),
-                    Ward = table.Column<string>(maxLength: 50, nullable: true),
-                    ApartmentNumber = table.Column<string>(maxLength: 50, nullable: true),
+                    Status = table.Column<int>(nullable: false),
+                    PhoneNumber = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
+                    FullName = table.Column<string>(maxLength: 256, nullable: true),
+                    Province = table.Column<string>(maxLength: 256, nullable: true),
+                    District = table.Column<string>(maxLength: 256, nullable: true),
+                    Ward = table.Column<string>(maxLength: 256, nullable: true),
+                    Street = table.Column<string>(maxLength: 256, nullable: true),
                     TotalPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true),
-                    UserID = table.Column<Guid>(nullable: true)
+                    UserID = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.OrderID);
+                    table.ForeignKey(
+                        name: "FK_Orders_OrderStatuses",
+                        column: x => x.Status,
+                        principalTable: "OrderStatuses",
+                        principalColumn: "StatusId",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Orders_UserInfo",
                         column: x => x.UserID,
                         principalTable: "UserInfo",
                         principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CartDetails",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(nullable: false),
+                    ProductId = table.Column<int>(nullable: false),
+                    Quantity = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CartDetails", x => new { x.UserId, x.ProductId });
+                    table.ForeignKey(
+                        name: "FK_CartDetails_Products",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "ProductID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CartDetails_UserInfo",
+                        column: x => x.UserId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductImagse",
+                columns: table => new
+                {
+                    ImageId = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Url = table.Column<string>(nullable: true),
+                    ProductId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductImagse", x => x.ImageId);
+                    table.ForeignKey(
+                        name: "FK_ProductImages_Products",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "ProductID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -387,8 +455,8 @@ namespace WebsiteBanHang.Migrations
                 {
                     OrderID = table.Column<int>(nullable: false),
                     ProductID = table.Column<int>(nullable: false),
-                    Quantity = table.Column<int>(nullable: true),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true)
+                    Quantity = table.Column<int>(nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -413,8 +481,8 @@ namespace WebsiteBanHang.Migrations
                 {
                     OrderID = table.Column<int>(nullable: false),
                     ProductID = table.Column<int>(nullable: false),
-                    Quantity = table.Column<int>(nullable: true),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true)
+                    Quantity = table.Column<int>(nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -424,7 +492,7 @@ namespace WebsiteBanHang.Migrations
                         column: x => x.OrderID,
                         principalTable: "Orders",
                         principalColumn: "OrderID",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_OrderDetails_Products",
                         column: x => x.ProductID,
@@ -478,6 +546,18 @@ namespace WebsiteBanHang.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_PhoneNumber",
+                table: "AspNetUsers",
+                column: "PhoneNumber",
+                unique: true,
+                filter: "[PhoneNumber] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartDetails_ProductId",
+                table: "CartDetails",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderDetails_ProductID",
                 table: "OrderDetails",
                 column: "ProductID");
@@ -488,6 +568,11 @@ namespace WebsiteBanHang.Migrations
                 column: "ProductID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_Status",
+                table: "Orders",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserID",
                 table: "Orders",
                 column: "UserID");
@@ -496,6 +581,11 @@ namespace WebsiteBanHang.Migrations
                 name: "IX_OrdersImportGoods_SupplierID",
                 table: "OrdersImportGoods",
                 column: "SupplierID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductImagse_ProductId",
+                table: "ProductImagse",
+                column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_CategoryID",
@@ -553,6 +643,9 @@ namespace WebsiteBanHang.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CartDetails");
+
+            migrationBuilder.DropTable(
                 name: "Events");
 
             migrationBuilder.DropTable(
@@ -560,6 +653,9 @@ namespace WebsiteBanHang.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderImportGoodsDetails");
+
+            migrationBuilder.DropTable(
+                name: "ProductImagse");
 
             migrationBuilder.DropTable(
                 name: "Replies");
@@ -578,6 +674,9 @@ namespace WebsiteBanHang.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "OrderStatuses");
 
             migrationBuilder.DropTable(
                 name: "UserInfo");

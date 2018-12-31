@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace WebsiteBanHang.Models
 {
-    public partial class Replies
+    public class Replies
     {
         public Replies()
         {

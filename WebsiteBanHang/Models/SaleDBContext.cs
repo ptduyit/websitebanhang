@@ -32,51 +32,39 @@ namespace WebsiteBanHang.Models
         public virtual DbSet<Suppliers> Suppliers { get; set; }
         public virtual DbSet<UserInfo> UserInfo { get; set; }
         public virtual DbSet<ProductImages> ProductImagse { get; set; }
-        
+        public virtual DbSet<OrderStatuses> OrderStatuses { get; set; }
+        public virtual DbSet<CartDetails> CartDetails { get; set; }
+        public virtual DbSet<User> User { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<User>().Property(p => p.Id).ValueGeneratedOnAdd();
             modelBuilder.Entity<IdentityRole<Guid>>().Property(p => p.Id).ValueGeneratedOnAdd();
-            //modelBuilder.Entity<User>(entity =>
-            //{
-            //    entity.HasKey(e => e.UserId);
-
-            //    entity.HasIndex(e => e.Username)
-            //        .HasName("IX_Account")
-            //        .IsUnique();
-
-            //    entity.Property(e => e.UserId)
-            //        .HasColumnName("UserID")
-            //        .ValueGeneratedNever();
-
-            //    entity.Property(e => e.Password)
-            //        .HasMaxLength(30)
-            //        .IsUnicode(false);
-
-            //    entity.Property(e => e.Username)
-            //        .IsRequired()
-            //        .HasMaxLength(30)
-            //        .IsUnicode(false);
-            //});
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(e => e.PhoneNumber).IsUnique();
+            });
 
             modelBuilder.Entity<Address>(entity =>
             {
                 entity.Property(e => e.AddressId).HasColumnName("AddressID");
 
-                entity.Property(e => e.ApartmentNumber).HasMaxLength(50);
+                entity.Property(e => e.Street).HasMaxLength(256);
 
-                entity.Property(e => e.District).HasMaxLength(50);
+                entity.Property(e => e.District).HasMaxLength(256);
 
-                entity.Property(e => e.Province).HasMaxLength(50);
+                entity.Property(e => e.Province).HasMaxLength(256);
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
-                entity.Property(e => e.Ward).HasMaxLength(50);
+                entity.Property(e => e.Ward).HasMaxLength(256);
 
                 entity.HasOne(d => d.User)
-                    .WithMany(p => p.AddressNavigation)
+                    .WithMany(p => p.Address)
                     .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_Address_UserInfo");
             });
 
@@ -108,7 +96,7 @@ namespace WebsiteBanHang.Models
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderDetails)
                     .HasForeignKey(d => d.OrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_OrderDetails_Orders");
 
                 entity.HasOne(d => d.Product)
@@ -125,13 +113,13 @@ namespace WebsiteBanHang.Models
                 entity.HasOne(d => d.UserInfo)
                     .WithMany(p => p.CartDetails)
                     .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_CartDetails_UserInfo");
 
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.CartDetails)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_CartDetails_Products");
             });
 
@@ -174,19 +162,19 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.OrderId).HasColumnName("OrderID");
 
-                entity.Property(e => e.ApartmentNumber).HasMaxLength(50);
+                entity.Property(e => e.Street).HasMaxLength(256);
 
-                entity.Property(e => e.District).HasMaxLength(50);
+                entity.Property(e => e.District).HasMaxLength(256);
 
-                entity.Property(e => e.FullName).HasMaxLength(50);
+                entity.Property(e => e.FullName).HasMaxLength(256);
 
                 entity.Property(e => e.OrderDate).HasColumnType("datetime");
 
-                entity.Property(e => e.Phone)
+                entity.Property(e => e.PhoneNumber)
                     .HasMaxLength(20)
                     .IsUnicode(false);
 
-                entity.Property(e => e.Province).HasMaxLength(50);
+                entity.Property(e => e.Province).HasMaxLength(256);
 
                 entity.Property(e => e.ShippedDate).HasColumnType("datetime");
 
@@ -194,12 +182,19 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
-                entity.Property(e => e.Ward).HasMaxLength(50);
+                entity.Property(e => e.Ward).HasMaxLength(256);
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Orders_UserInfo");
+
+                entity.HasOne(d => d.OrderStatus)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.Status)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Orders_OrderStatuses");
             });
 
             modelBuilder.Entity<OrdersImportGoods>(entity =>
@@ -228,7 +223,12 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
 
-                entity.Property(e => e.CategoryName).HasMaxLength(200);
+                entity.Property(e => e.CategoryName).HasMaxLength(256);
+            });
+
+            modelBuilder.Entity<OrderStatuses>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
             });
 
             modelBuilder.Entity<Products>(entity =>
@@ -249,7 +249,7 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.ImportPrice).HasColumnType("decimal(18, 0)");
 
-                entity.Property(e => e.ProductName).HasMaxLength(200);
+                entity.Property(e => e.ProductName).HasMaxLength(256);
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
 
@@ -298,9 +298,9 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.SlideId).HasColumnName("SlideID");
 
-                entity.Property(e => e.Image).HasMaxLength(100);
+                entity.Property(e => e.Image).HasMaxLength(256);
 
-                entity.Property(e => e.Link).HasMaxLength(100);
+                entity.Property(e => e.Link).HasMaxLength(256);
             });
 
             modelBuilder.Entity<Suppliers>(entity =>
@@ -326,10 +326,6 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.HasIndex(e => e.Email)
-                    .HasName("IX_UserInfo")
-                    .IsUnique();
-
                 entity.HasIndex(e => e.Phone)
                     .HasName("IX_UserInfo_1")
                     .IsUnique();
@@ -337,14 +333,10 @@ namespace WebsiteBanHang.Models
                 entity.Property(e => e.UserId)
                     .HasColumnName("UserID")
                     .ValueGeneratedNever();
-
-                entity.Property(e => e.Address).HasMaxLength(50);
-
+                                
                 entity.Property(e => e.BirthDate).HasColumnType("datetime");
 
-                entity.Property(e => e.Email).HasMaxLength(50);
-
-                entity.Property(e => e.FullName).HasMaxLength(50);
+                entity.Property(e => e.FullName).HasMaxLength(256);
 
                 entity.Property(e => e.Phone)
                     .HasMaxLength(20)
@@ -353,15 +345,13 @@ namespace WebsiteBanHang.Models
                 entity.HasOne(d => d.User)
                     .WithOne(p => p.UserInfo)
                     .HasForeignKey<UserInfo>(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_UserInfo_Account");
             });
         }
 
         
-        public virtual DbSet<User> User { get; set; }
 
         
-        public DbSet<WebsiteBanHang.Models.CartDetails> CartDetails { get; set; }
     }
 }

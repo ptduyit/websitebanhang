@@ -10,6 +10,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -44,9 +45,9 @@ namespace WebsiteBanHang.Controllers
         }
 
         [HttpGet("{id}")]
-        public IQueryable<ProductInformationViewModel> GetProductInformation([FromRoute] int id)
+        public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
-            return _context.Products.Include(p => p.ProductImage).Where(p => p.ProductId == id).Select(i => new ProductInformationViewModel
+            var product = await _context.Products.Include(p => p.ProductImage).Select(i => new ProductInformationViewModel
             {
                 ProductId = i.ProductId,
                 ProductName = i.ProductName,
@@ -59,7 +60,9 @@ namespace WebsiteBanHang.Controllers
                 Stock = i.Stock,
                 Summary = i.Summary,
                 ProductImage = i.ProductImage
-            });
+            }).SingleOrDefaultAsync(x => x.ProductId == id);
+
+            return Ok(product);
         }
         // GET: api/Products/5
         [HttpGet("{id}")]

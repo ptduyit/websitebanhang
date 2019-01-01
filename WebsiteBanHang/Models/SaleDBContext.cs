@@ -244,7 +244,7 @@ namespace WebsiteBanHang.Models
                 entity.Property(e => e.Description).HasColumnType("ntext");
 
                 entity.Property(e => e.Image)
-                    .HasMaxLength(100)
+                    .HasMaxLength(3000)
                     .IsUnicode(false);
 
                 entity.Property(e => e.ImportPrice).HasColumnType("decimal(18, 0)");

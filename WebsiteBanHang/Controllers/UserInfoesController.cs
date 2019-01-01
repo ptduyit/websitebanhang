@@ -61,7 +61,11 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest();
             }
-
+            if(userInfo.BirthDate != null)
+            {
+                TimeSpan time = new TimeSpan(7, 0, 0);
+                userInfo.BirthDate = userInfo.BirthDate.Add(time);
+            }
             _context.Entry(userInfo).State = EntityState.Modified;
 
             try

@@ -132,7 +132,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
-            if(addressDefault != null)
+            if(addressDefault.AddressId == id)
             {
                 return BadRequest(ModelState);
             }

@@ -18,7 +18,7 @@ namespace WebsiteBanHang.Models
         
         public string Phone { get; set; }
         
-        public DateTime? BirthDate { get; set; }
+        public DateTime BirthDate { get; set; }
         public bool? Gender { get; set; }
         public Guid UserId { get; set; }
         [JsonIgnore]

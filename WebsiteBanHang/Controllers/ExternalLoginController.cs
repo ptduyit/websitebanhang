@@ -82,7 +82,7 @@ namespace WebsiteBanHang.Controllers
 
                 if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
 
-                await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name });
+                await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
                 await _appDbContext.SaveChangesAsync();
                 await _userManager.AddToRoleAsync(appUser, "Member");
             }

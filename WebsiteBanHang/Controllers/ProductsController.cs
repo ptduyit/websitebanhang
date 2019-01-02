@@ -43,7 +43,12 @@ namespace WebsiteBanHang.Controllers
                 ProductImage = item.ProductImage
             });
         }
-
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetStockProduct([FromRoute] int id)
+        {
+            var stock = await _context.Products.Where(p => p.ProductId == id).Select(i => new { i.Stock }).SingleOrDefaultAsync();
+            return Ok(stock);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
@@ -73,7 +78,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var products = await _context.Products.FindAsync(id);
+            var products = await _context.Products.Include(p => p.ProductImage).Where(p => p.ProductId == id).FirstOrDefaultAsync();
 
             if (products == null)
             {

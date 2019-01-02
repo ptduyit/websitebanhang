@@ -16,7 +16,7 @@ namespace WebsiteBanHang.ViewModels
         public string Description { get; set; }
         public string Image { get; set; }
         public int Guarantee { get; set; }
-        public double Rate { get; set; }
+        public double? Rate { get; set; }
         public string Summary { get; set; }
         public ICollection<ProductImages> ProductImage { get; set; }
     }

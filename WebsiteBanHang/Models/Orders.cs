@@ -8,7 +8,7 @@ namespace WebsiteBanHang.Models
     {
         public Orders()
         {
-            OrderDetails = new HashSet<OrderDetails>();
+            OrderDetails = new List<OrderDetails>();
         }
 
         public int OrderId { get; set; }
@@ -27,6 +27,6 @@ namespace WebsiteBanHang.Models
         public UserInfo User { get; set; }
         public OrderStatuses OrderStatus { get; set; }
 
-        public ICollection<OrderDetails> OrderDetails { get; set; }
+        public IList<OrderDetails> OrderDetails { get; set; }
     }
 }

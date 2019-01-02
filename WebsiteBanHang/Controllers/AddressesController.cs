@@ -62,7 +62,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest();
             }
 
-            var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
+            var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
             if (addressDefault.AddressId == id)
             {
                 address.IsDefault = true;
@@ -107,7 +107,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
+            var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
             if(address.IsDefault == true && addressDefault != null)
             {
                 addressDefault.IsDefault = false;

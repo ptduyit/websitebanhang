@@ -42,10 +42,10 @@ namespace WebsiteBanHang.Controllers
               (c, p) => new
               {
                  c.UserId, c.ProductId, c.Quantity,
-                 p.ProductName, p.UnitPrice, p.Image, p.Stock, p.Discount
+                 p.ProductName, p.UnitPrice, p.Image, p.Stock, p.Discount, p.Summary
               }).Where(e => e.UserId == id).ToListAsync();
 
-            if (cartDetails == null)
+            if (!cartDetails.Any())
             {
                 return NotFound();
             }

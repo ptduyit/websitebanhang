@@ -61,7 +61,7 @@ namespace WebsiteBanHang.Controllers
 
             return NoContent();
         }
-        
+
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
@@ -70,9 +70,9 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest(ModelState);
             }
-            
+
             var orders = await _context.Orders.FindAsync(id);
-            
+
             if (orders == null)
             {
                 return NotFound();
@@ -89,7 +89,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var orders = await _context.Orders.Select(o=>o).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.UserId == id).ToListAsync();
+            var orders = await _context.Orders.Select(o => o).Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.UserId == id).OrderByDescending(d => d.OrderDate).ToListAsync();
 
             if (orders == null)
             {
@@ -135,15 +135,28 @@ namespace WebsiteBanHang.Controllers
         }
 
         // POST: api/Orders
-        [HttpPost]
-        public async Task<IActionResult> PostOrders([FromBody] Orders orders)
+        [HttpPost("{addressId}")]
+        public async Task<IActionResult> PostOrders([FromBody] Orders orders, int addressId)
         {
 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            foreach(var item in orders.OrderDetails.Select((value, i) => new { i, value}))
+            {
+                orders.OrderDetails[item.i].UnitPrice = _context.Products.Find(item.value.ProductId).UnitPrice;
+            }
+            var address = _context.Address.Find(addressId);
+            orders.PhoneNumber = address.PhoneNumber;
+            orders.FullName = address.FullName;
+            orders.Province = address.Province;
+            orders.District = address.District;
+            orders.Ward = address.Ward;
+            orders.Street = address.Street;
+            orders.OrderDate = DateTime.Now;
             orders.OrderId = 0;
+            orders.Status = 1;
             _context.Orders.Add(orders);
             var success = await _context.SaveChangesAsync();
             CartDetailsController cartDetails = new CartDetailsController(_context);

@@ -38,19 +38,47 @@ namespace WebsiteBanHang.Controllers
         [HttpPost("{platform}")]
         public async Task<IActionResult> Post([FromBody]AccessTokenViewModel model, [FromRoute] string platform)
         {
-            if(platform != "google" && platform != "facebook")
-                return BadRequest(ModelState);
-            UserData userInfo;
             if (platform == "google")
             {
                 var userInfoResponse = await Client.GetStringAsync($"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={model.AccessToken}");
-                userInfo = JsonConvert.DeserializeObject<UserData>(userInfoResponse);
+                var userInfo = JsonConvert.DeserializeObject<UserData>(userInfoResponse);
                 if (!string.Equals(userInfo.ClientId, _ggAuthSettings.ClientId))
                 {
                     return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid google token.", ModelState));
-                }     
+                }
+                var user = await _userManager.FindByEmailAsync(userInfo.Email);
+
+                if (user == null)
+                {
+                    var appUser = new User
+                    {
+                        Email = userInfo.Email,
+                        UserName = userInfo.Email,
+                    };
+
+                    var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));
+
+                    if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
+
+                    await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
+                    await _appDbContext.SaveChangesAsync();
+                    await _userManager.AddToRoleAsync(appUser, "Member");
+                }
+
+                // generate the jwt for the local user...
+                var localUser = await _userManager.FindByNameAsync(userInfo.Email);
+
+                if (localUser == null)
+                {
+                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Failed to create local user account.", ModelState));
+                }
+                var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
+
+                var jwt = await Tokens.GenerateJwt(user, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
+
+                return new OkObjectResult(jwt);
             }
-            else
+            else if (platform == "facebook")
             {
                 // 1.generate an app access token
                 var appAccessTokenResponse = await Client.GetStringAsync($"https://graph.facebook.com/oauth/access_token?client_id={_fbAuthSettings.AppId}&client_secret={_fbAuthSettings.AppSecret}&grant_type=client_credentials");
@@ -66,39 +94,40 @@ namespace WebsiteBanHang.Controllers
 
                 // 3. we've got a valid token so we can request user data from fb
                 var userInfoResponse = await Client.GetStringAsync($"https://graph.facebook.com/v3.2/me?fields=id,email,name,gender,birthday&access_token={model.AccessToken}");
-                userInfo = JsonConvert.DeserializeObject<UserData>(userInfoResponse);
-            }
-            var user = await _userManager.FindByEmailAsync(userInfo.Email);
+                var userInfo = JsonConvert.DeserializeObject<UserData>(userInfoResponse);
+                var user = await _userManager.FindByEmailAsync(userInfo.Email);
 
-            if (user == null)
-            {
-                var appUser = new User
+                if (user == null)
                 {
-                    Email = userInfo.Email,
-                    UserName = userInfo.Email,
-                };
+                    var appUser = new User
+                    {
+                        Email = userInfo.Email,
+                        UserName = userInfo.Email,
+                    };
 
-                var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));
+                    var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));
 
-                if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
+                    if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
 
-                await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
-                await _appDbContext.SaveChangesAsync();
-                await _userManager.AddToRoleAsync(appUser, "Member");
+                    await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
+                    await _appDbContext.SaveChangesAsync();
+                    await _userManager.AddToRoleAsync(appUser, "Member");
+                }
+
+                // generate the jwt for the local user...
+                var localUser = await _userManager.FindByNameAsync(userInfo.Email);
+
+                if (localUser == null)
+                {
+                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Failed to create local user account.", ModelState));
+                }
+                var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
+
+                var jwt = await Tokens.GenerateJwt(user, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
+
+                return new OkObjectResult(jwt);
             }
-
-            // generate the jwt for the local user...
-            var localUser = await _userManager.FindByNameAsync(userInfo.Email);
-
-            if (localUser == null)
-            {
-                return BadRequest(Errors.AddErrorToModelState("login_failure", "Failed to create local user account.", ModelState));
-            }
-            var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
-
-            var jwt = await Tokens.GenerateJwt(user, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
-
-            return new OkObjectResult(jwt);
+            return BadRequest(ModelState);
         }
     }
 }

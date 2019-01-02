@@ -13,7 +13,7 @@ namespace WebsiteBanHang.ViewModels
         public decimal UnitPrice { get; set; }
         public double Discount { get; set; }
         public string Image { get; set; }
-        public double Rate { get; set; }
+        public double? Rate { get; set; }
         public ICollection<ProductImages> ProductImage { get; set; }
     }
 }

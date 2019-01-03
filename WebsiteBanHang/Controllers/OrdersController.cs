@@ -29,9 +29,9 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("{status}")]
         public IEnumerable<Orders> GetConfirmOrders([FromRoute] int status)
         {
-            return _context.Orders.Where(e => e.Status == status).ToList();
+            return _context.Orders.Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.Status == status).ToList();
         }
-        [HttpPut("{id}/{status}")]
+        [HttpGet("{id}/{status}")]
         public async Task<IActionResult> PutConfirmOrders([FromRoute] int id, [FromRoute] int status)
         {
             if (!ModelState.IsValid)
@@ -143,11 +143,15 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest(ModelState);
             }
+            decimal total = 0;
             foreach(var item in orders.OrderDetails.Select((value, i) => new { i, value}))
             {
-                orders.OrderDetails[item.i].UnitPrice = _context.Products.Find(item.value.ProductId).UnitPrice;
+                var unitprice = _context.Products.Find(item.value.ProductId).UnitPrice;
+                orders.OrderDetails[item.i].UnitPrice = unitprice;
+                total += orders.OrderDetails[item.i].Quantity * unitprice;
             }
             var address = _context.Address.Find(addressId);
+            orders.TotalPrice = total;
             orders.PhoneNumber = address.PhoneNumber;
             orders.FullName = address.FullName;
             orders.Province = address.Province;

@@ -146,9 +146,17 @@ namespace WebsiteBanHang.Controllers
             decimal total = 0;
             foreach(var item in orders.OrderDetails.Select((value, i) => new { i, value}))
             {
-                var unitprice = _context.Products.Find(item.value.ProductId).UnitPrice;
+                var product = await _context.Products.FindAsync(item.value.ProductId);
+                var quantity = orders.OrderDetails[item.i].Quantity;
+                var unitprice = product.UnitPrice;
                 orders.OrderDetails[item.i].UnitPrice = unitprice;
-                total += orders.OrderDetails[item.i].Quantity * unitprice;
+                total += quantity * unitprice;
+                product.Stock -= quantity;
+                if(product.Stock < 0)
+                {
+                    return BadRequest();
+                }
+                _context.Entry(product).State = EntityState.Modified;
             }
             var address = _context.Address.Find(addressId);
             orders.TotalPrice = total;

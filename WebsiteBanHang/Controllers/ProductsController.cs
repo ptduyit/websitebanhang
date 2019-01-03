@@ -32,7 +32,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet]
         public IQueryable<ViewModelProduct> GetIndexProducts()
         {
-            return _context.Products.Include(p => p.ProductImage).Where(u => u.DisplayIndex == true && u.Discontinued != true).Select(item => new ViewModelProduct
+            return _context.Products.Include(p => p.ProductImage).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ViewModelProduct
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
@@ -43,6 +43,7 @@ namespace WebsiteBanHang.Controllers
                 ProductImage = item.ProductImage
             });
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStockProduct([FromRoute] int id)
         {
@@ -88,6 +89,24 @@ namespace WebsiteBanHang.Controllers
             return Ok(products);
         }
 
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetProductByName([FromRoute] string name)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var products = await _context.Products.Where(p => name == null || p.ProductName.StartsWith(name) || p.ProductName.EndsWith(name) || p.ProductName.Contains(name)).Take(10).Select(i => new ProductSearchViewModel
+            {
+                ProductId = i.ProductId,
+                ProductName = i.ProductName,
+                UnitPrice = i.UnitPrice,
+                Image = i.Image
+            }).ToListAsync();
+
+            return Ok(products);
+        }
         // PUT: api/Products/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProducts([FromRoute] int id, [FromBody] Products products)

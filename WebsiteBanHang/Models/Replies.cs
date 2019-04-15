@@ -19,14 +19,14 @@ namespace WebsiteBanHang.Models
         public int? Likes { get; set; }
         public bool IsRate { get; set; }
         public int? Rate { get; set; }
-        public Guid? UserId { get; set; }
+        public Guid UserId { get; set; }
         [JsonIgnore]
         public Products Product { get; set; }
         [JsonIgnore]
         public Replies ReplyByReplyNavigation { get; set; }
-        [JsonIgnore]
+        
         public UserInfo User { get; set; }
-        [JsonIgnore]
+        
         public ICollection<Replies> InverseReplyByReplyNavigation { get; set; }
     }
 }

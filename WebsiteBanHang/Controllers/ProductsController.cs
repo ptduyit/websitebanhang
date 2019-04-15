@@ -28,7 +28,25 @@ namespace WebsiteBanHang.Controllers
         {
             return _context.Products;
         }
+        [HttpGet("{search}")]
+        public IEnumerable<Products> SearchProducts([FromRoute] string search)
+        {
+            var query = new string[]
+{
+    "abc foo bar xyz john doe",
+    "abc foo bar xyz doe",
+    "hello world",
+    "abc foo bar john doe",
+};
+            var abc = "abc john world";
+            var searchstrings = abc.Split(' ');
 
+            searchstrings = searchstrings.Select(x => x.ToLower()).ToArray();
+
+            var results = query.Select(x => x.ToLower())
+                               .Where(x => searchstrings.Any(y => x.Contains(y)));
+            return _context.Products;
+        }
         [HttpGet]
         public IQueryable<ViewModelProduct> GetIndexProducts()
         {

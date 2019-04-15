@@ -269,7 +269,7 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.ReplyContent)
                     .IsRequired()
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.ReplyDate).HasColumnType("datetime");
 

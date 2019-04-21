@@ -27,11 +27,12 @@ namespace WebsiteBanHang.Models
         public virtual DbSet<OrdersImportGoods> OrdersImportGoods { get; set; }
         public virtual DbSet<ProductCategories> ProductCategories { get; set; }
         public virtual DbSet<Products> Products { get; set; }
-        public virtual DbSet<Replies> Replies { get; set; }
+        public virtual DbSet<EvaluationQuestions> EvaluationQuestions { get; set; }
+        public virtual DbSet<Comments> Comments { get; set; }
         public virtual DbSet<SlideShow> SlideShow { get; set; }
         public virtual DbSet<Suppliers> Suppliers { get; set; }
         public virtual DbSet<UserInfo> UserInfo { get; set; }
-        public virtual DbSet<ProductImages> ProductImagse { get; set; }
+        public virtual DbSet<ProductImages> ProductImages { get; set; }
         public virtual DbSet<OrderStatuses> OrderStatuses { get; set; }
         public virtual DbSet<CartDetails> CartDetails { get; set; }
         public virtual DbSet<User> User { get; set; }
@@ -49,15 +50,11 @@ namespace WebsiteBanHang.Models
 
             modelBuilder.Entity<Address>(entity =>
             {
-                entity.Property(e => e.AddressId).HasColumnName("AddressID");
-
                 entity.Property(e => e.Street).HasMaxLength(256);
 
                 entity.Property(e => e.District).HasMaxLength(256);
 
                 entity.Property(e => e.Province).HasMaxLength(256);
-
-                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.Property(e => e.Ward).HasMaxLength(256);
 
@@ -72,8 +69,6 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.EventId);
 
-                entity.Property(e => e.EventId).HasColumnName("EventID");
-
                 entity.Property(e => e.Description).HasColumnType("ntext");
 
                 entity.Property(e => e.FinishDate).HasColumnType("datetime");
@@ -87,10 +82,6 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => new { e.OrderId, e.ProductId });
 
-                entity.Property(e => e.OrderId).HasColumnName("OrderID");
-
-                entity.Property(e => e.ProductId).HasColumnName("ProductID");
-
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
 
                 entity.HasOne(d => d.Order)
@@ -102,7 +93,7 @@ namespace WebsiteBanHang.Models
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.OrderDetails)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_OrderDetails_Products");
             });
 
@@ -127,9 +118,9 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.ImageId);
                 entity.HasOne(d => d.Product)
-                    .WithMany(p => p.ProductImage)
+                    .WithMany(p => p.ProductImages)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.Cascade)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_ProductImages_Products");
             });
 
@@ -137,30 +128,24 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => new { e.OrderId, e.ProductId });
 
-                entity.Property(e => e.OrderId).HasColumnName("OrderID");
-
-                entity.Property(e => e.ProductId).HasColumnName("ProductID");
-
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
 
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderImportGoodsDetails)
                     .HasForeignKey(d => d.OrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_OrderImportGoodsDetails_OrdersImportGoods");
 
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.OrderImportGoodsDetails)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_OrderImportGoodsDetails_Products");
             });
 
             modelBuilder.Entity<Orders>(entity =>
             {
                 entity.HasKey(e => e.OrderId);
-
-                entity.Property(e => e.OrderId).HasColumnName("OrderID");
 
                 entity.Property(e => e.Street).HasMaxLength(256);
 
@@ -180,20 +165,18 @@ namespace WebsiteBanHang.Models
 
                 entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 0)");
 
-                entity.Property(e => e.UserId).HasColumnName("UserID");
-
                 entity.Property(e => e.Ward).HasMaxLength(256);
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_Orders_UserInfo");
 
                 entity.HasOne(d => d.OrderStatus)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.Status)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Orders_OrderStatuses");
             });
 
@@ -201,29 +184,36 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.OrderId);
 
-                entity.Property(e => e.OrderId).HasColumnName("OrderID");
-
                 entity.Property(e => e.OrderDate).HasColumnType("datetime");
 
-                entity.Property(e => e.SupplierId).HasColumnName("SupplierID");
-
                 entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 0)");
-
-                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Supplier)
                     .WithMany(p => p.OrdersImportGoods)
                     .HasForeignKey(d => d.SupplierId)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("FK_OrdersImportGoods_Suppliers");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.OrdersImportGoods)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("FK_OrdersImportGoods_UserInfo");
             });
 
             modelBuilder.Entity<ProductCategories>(entity =>
             {
                 entity.HasKey(e => e.CategoryId);
 
-                entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
-
                 entity.Property(e => e.CategoryName).HasMaxLength(256);
+
+                entity.HasIndex(e => e.Url).IsUnique();
+
+                entity.HasOne(d => d.CategoryParent)
+                    .WithMany(p => p.CategoryChildrens)
+                    .HasForeignKey(d => d.ParentId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_ProductCategories_ProductCategories");
             });
 
             modelBuilder.Entity<OrderStatuses>(entity =>
@@ -234,10 +224,6 @@ namespace WebsiteBanHang.Models
             modelBuilder.Entity<Products>(entity =>
             {
                 entity.HasKey(e => e.ProductId);
-
-                entity.Property(e => e.ProductId).HasColumnName("ProductID");
-
-                entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
 
                 entity.Property(e => e.DateUpdated).HasColumnType("datetime");
 
@@ -256,47 +242,55 @@ namespace WebsiteBanHang.Models
                 entity.HasOne(d => d.Category)
                     .WithMany(p => p.Products)
                     .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Products_ProductCategories");
             });
 
-            modelBuilder.Entity<Replies>(entity =>
+            modelBuilder.Entity<EvaluationQuestions>(entity =>
             {
-                entity.HasKey(e => e.ReplyId);
+                entity.HasKey(e => e.EvaluationId);
 
-                entity.Property(e => e.ReplyId).HasColumnName("ReplyID");
-
-                entity.Property(e => e.ProductId).HasColumnName("ProductID");
-
-                entity.Property(e => e.ReplyContent)
+                entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnType("ntext");
 
-                entity.Property(e => e.ReplyDate).HasColumnType("datetime");
-
-                entity.Property(e => e.UserId).HasColumnName("UserID");
+                entity.Property(e => e.Date).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Product)
-                    .WithMany(p => p.Replies)
+                    .WithMany(p => p.EvaluationQuestions)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Replies_Products");
-
-                entity.HasOne(d => d.ReplyByReplyNavigation)
-                    .WithMany(p => p.InverseReplyByReplyNavigation)
-                    .HasForeignKey(d => d.ReplyByReply)
-                    .HasConstraintName("FK_Replies_Replies");
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_Evaluation_Products");
 
                 entity.HasOne(d => d.User)
-                    .WithMany(p => p.Replies)
+                    .WithMany(p => p.EvaluationQuestions)
                     .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK_Replies_UserInfo");
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_Evaluation_UserInfo");
+            });
+
+            modelBuilder.Entity<Comments>(entity =>
+            {
+                entity.HasKey(e => e.CommentId);
+                entity.Property(e => e.Date).HasColumnType("datetime");
+                entity.Property(e => e.Content).HasMaxLength(1500);
+
+                entity.HasOne(d => d.EvaluationQuestions)
+                    .WithMany(p => p.Comments)
+                    .HasForeignKey(d => d.ParentId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_Comments_Evaluation");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.Comments)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK_Comment_UserInfo");
             });
 
             modelBuilder.Entity<SlideShow>(entity =>
             {
                 entity.HasKey(e => e.SlideId);
-
-                entity.Property(e => e.SlideId).HasColumnName("SlideID");
 
                 entity.Property(e => e.Image).HasMaxLength(256);
 
@@ -306,8 +300,6 @@ namespace WebsiteBanHang.Models
             modelBuilder.Entity<Suppliers>(entity =>
             {
                 entity.HasKey(e => e.SupplierId);
-
-                entity.Property(e => e.SupplierId).HasColumnName("SupplierID");
 
                 entity.Property(e => e.Address).HasMaxLength(50);
 
@@ -326,26 +318,16 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.HasIndex(e => e.Phone)
-                    .HasName("IX_UserInfo_1")
-                    .IsUnique();
-
-                entity.Property(e => e.UserId)
-                    .HasColumnName("UserID")
-                    .ValueGeneratedNever();
+                entity.Property(e => e.UserId).ValueGeneratedNever();
                                 
                 entity.Property(e => e.BirthDate).HasColumnType("datetime");
 
                 entity.Property(e => e.FullName).HasMaxLength(256);
 
-                entity.Property(e => e.Phone)
-                    .HasMaxLength(20)
-                    .IsUnicode(false);
-
                 entity.HasOne(d => d.User)
                     .WithOne(p => p.UserInfo)
                     .HasForeignKey<UserInfo>(d => d.UserId)
-                    .OnDelete(DeleteBehavior.Cascade)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_UserInfo_Account");
             });
         }

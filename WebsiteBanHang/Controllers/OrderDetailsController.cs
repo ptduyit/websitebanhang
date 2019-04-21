@@ -172,11 +172,11 @@ namespace WebsiteBanHang.Controllers
             return Ok(orderDetails);
         }
 
-        private bool OrderDetailsExists(int orderId, int productId)
+        private bool OrderDetailsExists(int orderId, int? productId)
         {
             return _context.OrderDetails.Any(e => e.OrderId == orderId && e.ProductId == productId);
         }
-        private decimal GetPriceProduct(int productId)
+        private decimal GetPriceProduct(int? productId)
         {
             return (decimal)_context.Products.Where(e => e.ProductId == productId).Select(i => i.UnitPrice).FirstOrDefault();
         }

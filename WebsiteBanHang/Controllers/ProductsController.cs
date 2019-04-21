@@ -50,7 +50,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet]
         public IQueryable<ViewModelProduct> GetIndexProducts()
         {
-            return _context.Products.Include(p => p.ProductImage).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ViewModelProduct
+            return _context.Products.Include(p => p.ProductImages).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ViewModelProduct
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
@@ -58,7 +58,7 @@ namespace WebsiteBanHang.Controllers
                 Discount = item.Discount,
                 Image = item.Image,
                 Rate = item.Rate,
-                ProductImage = item.ProductImage
+                ProductImage = item.ProductImages
             });
         }
 
@@ -71,7 +71,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
-            var product = await _context.Products.Include(p => p.ProductImage).Select(i => new ProductInformationViewModel
+            var product = await _context.Products.Include(p => p.ProductImages).Select(i => new ProductInformationViewModel
             {
                 ProductId = i.ProductId,
                 ProductName = i.ProductName,
@@ -83,7 +83,7 @@ namespace WebsiteBanHang.Controllers
                 Guarantee = i.Guarantee,
                 Stock = i.Stock,
                 Summary = i.Summary,
-                ProductImage = i.ProductImage
+                ProductImage = i.ProductImages
             }).SingleOrDefaultAsync(x => x.ProductId == id);
 
             return Ok(product);
@@ -97,7 +97,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var products = await _context.Products.Include(p => p.ProductImage).Where(p => p.ProductId == id).FirstOrDefaultAsync();
+            var products = await _context.Products.Include(p => p.ProductImages).Where(p => p.ProductId == id).FirstOrDefaultAsync();
 
             if (products == null)
             {

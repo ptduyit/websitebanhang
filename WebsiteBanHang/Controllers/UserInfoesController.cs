@@ -25,7 +25,7 @@ namespace WebsiteBanHang.Controllers
         public IActionResult GetUser()
         {
             var query = _context.UserInfo.Join(_context.User, u => u.UserId, i => i.Id, 
-                (u, i) => new { u.UserId, u.Phone,u.Gender,u.FullName,u.BirthDate,i.Email });
+                (u, i) => new { u.UserId, i.PhoneNumber,u.Gender,u.FullName,u.BirthDate,i.Email });
             return Ok(query);
         }
 

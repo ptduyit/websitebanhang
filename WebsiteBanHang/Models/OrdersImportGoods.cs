@@ -12,10 +12,11 @@ namespace WebsiteBanHang.Models
 
         public int OrderId { get; set; }
         public int? SupplierId { get; set; }
-        public DateTime? OrderDate { get; set; }
-        public int? UserId { get; set; }
+        public DateTime OrderDate { get; set; }
+        public Guid? UserId { get; set; }
         public decimal? TotalPrice { get; set; }
 
+        public UserInfo User { get; set; }
         public Suppliers Supplier { get; set; }
         public ICollection<OrderImportGoodsDetails> OrderImportGoodsDetails { get; set; }
     }

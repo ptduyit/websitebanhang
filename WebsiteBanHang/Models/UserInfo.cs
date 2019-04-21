@@ -10,14 +10,12 @@ namespace WebsiteBanHang.Models
         {
             Address = new HashSet<Address>();
             Orders = new HashSet<Orders>();
-            Replies = new HashSet<Replies>();
+            EvaluationQuestions = new HashSet<EvaluationQuestions>();
             CartDetails = new HashSet<CartDetails>();
+            Comments = new HashSet<Comments>();
         }
 
-        public string FullName { get; set; }
-        
-        public string Phone { get; set; }
-        
+        public string FullName { get; set; }       
         public DateTime BirthDate { get; set; }
         public bool? Gender { get; set; }
         public Guid UserId { get; set; }
@@ -28,8 +26,12 @@ namespace WebsiteBanHang.Models
         [JsonIgnore]
         public ICollection<Orders> Orders { get; set; }
         [JsonIgnore]
-        public ICollection<Replies> Replies { get; set; }
+        public ICollection<EvaluationQuestions> EvaluationQuestions { get; set; }
         [JsonIgnore]
         public ICollection<CartDetails> CartDetails { get; set; }
+        [JsonIgnore]
+        public ICollection<Comments> Comments { get; set; }
+        [JsonIgnore]
+        public ICollection<OrdersImportGoods> OrdersImportGoods { get; set; }
     }
 }

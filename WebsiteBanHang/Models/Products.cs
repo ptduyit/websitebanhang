@@ -10,9 +10,9 @@ namespace WebsiteBanHang.Models
         {
             OrderDetails = new HashSet<OrderDetails>();
             OrderImportGoodsDetails = new HashSet<OrderImportGoodsDetails>();
-            Replies = new HashSet<Replies>();
+            EvaluationQuestions = new HashSet<EvaluationQuestions>();
             CartDetails = new HashSet<CartDetails>();
-            ProductImage = new HashSet<ProductImages>();
+            ProductImages = new HashSet<ProductImages>();
         }
 
         public int ProductId { get; set; }
@@ -37,9 +37,9 @@ namespace WebsiteBanHang.Models
         [JsonIgnore]
         public ICollection<OrderImportGoodsDetails> OrderImportGoodsDetails { get; set; }
         [JsonIgnore]
-        public ICollection<Replies> Replies { get; set; }
+        public ICollection<EvaluationQuestions> EvaluationQuestions { get; set; }
         [JsonIgnore]
         public ICollection<CartDetails> CartDetails { get; set; }
-        public ICollection<ProductImages> ProductImage { get; set; }
+        public ICollection<ProductImages> ProductImages { get; set; }
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace WebsiteBanHang.Migrations
 {
-    public partial class FirstDatabase : Migration
+    public partial class CreateDB : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -52,7 +52,7 @@ namespace WebsiteBanHang.Migrations
                 name: "Events",
                 columns: table => new
                 {
-                    EventID = table.Column<int>(nullable: false)
+                    EventId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Title = table.Column<string>(maxLength: 200, nullable: true),
                     Description = table.Column<string>(type: "ntext", nullable: true),
@@ -61,7 +61,7 @@ namespace WebsiteBanHang.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Events", x => x.EventID);
+                    table.PrimaryKey("PK_Events", x => x.EventId);
                 });
 
             migrationBuilder.CreateTable(
@@ -81,20 +81,28 @@ namespace WebsiteBanHang.Migrations
                 name: "ProductCategories",
                 columns: table => new
                 {
-                    CategoryID = table.Column<int>(nullable: false)
+                    CategoryId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    CategoryName = table.Column<string>(maxLength: 256, nullable: true)
+                    CategoryName = table.Column<string>(maxLength: 256, nullable: true),
+                    Url = table.Column<string>(nullable: true),
+                    ParentId = table.Column<int>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProductCategories", x => x.CategoryID);
+                    table.PrimaryKey("PK_ProductCategories", x => x.CategoryId);
+                    table.ForeignKey(
+                        name: "FK_ProductCategories_ProductCategories",
+                        column: x => x.ParentId,
+                        principalTable: "ProductCategories",
+                        principalColumn: "CategoryId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "SlideShow",
                 columns: table => new
                 {
-                    SlideID = table.Column<int>(nullable: false)
+                    SlideId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Image = table.Column<string>(maxLength: 256, nullable: true),
                     Status = table.Column<bool>(nullable: true),
@@ -102,14 +110,14 @@ namespace WebsiteBanHang.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SlideShow", x => x.SlideID);
+                    table.PrimaryKey("PK_SlideShow", x => x.SlideId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Suppliers",
                 columns: table => new
                 {
-                    SupplierID = table.Column<int>(nullable: false)
+                    SupplierId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     CompanyName = table.Column<string>(maxLength: 200, nullable: true),
                     Phone = table.Column<string>(maxLength: 20, nullable: true),
@@ -120,7 +128,7 @@ namespace WebsiteBanHang.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Suppliers", x => x.SupplierID);
+                    table.PrimaryKey("PK_Suppliers", x => x.SupplierId);
                 });
 
             migrationBuilder.CreateTable(
@@ -234,74 +242,50 @@ namespace WebsiteBanHang.Migrations
                 columns: table => new
                 {
                     FullName = table.Column<string>(maxLength: 256, nullable: true),
-                    Email = table.Column<string>(maxLength: 256, nullable: true),
-                    Phone = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
-                    BirthDate = table.Column<DateTime>(type: "datetime", nullable: true),
+                    BirthDate = table.Column<DateTime>(type: "datetime", nullable: false),
                     Gender = table.Column<bool>(nullable: true),
-                    UserID = table.Column<Guid>(nullable: false)
+                    UserId = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserInfo", x => x.UserID);
+                    table.PrimaryKey("PK_UserInfo", x => x.UserId);
                     table.ForeignKey(
                         name: "FK_UserInfo_Account",
-                        column: x => x.UserID,
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Products",
                 columns: table => new
                 {
-                    ProductID = table.Column<int>(nullable: false)
+                    ProductId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     ProductName = table.Column<string>(maxLength: 256, nullable: true),
-                    CategoryID = table.Column<int>(nullable: false),
+                    CategoryId = table.Column<int>(nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
                     ImportPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
                     Discontinued = table.Column<bool>(nullable: false),
                     Discount = table.Column<double>(nullable: false),
                     Stock = table.Column<int>(nullable: false),
                     Description = table.Column<string>(type: "ntext", nullable: true),
-                    Image = table.Column<string>(unicode: false, maxLength: 100, nullable: true),
+                    Image = table.Column<string>(unicode: false, maxLength: 3000, nullable: true),
                     Guarantee = table.Column<int>(nullable: false),
                     DateUpdated = table.Column<DateTime>(type: "datetime", nullable: false),
-                    Rate = table.Column<double>(nullable: false),
+                    Rate = table.Column<double>(nullable: true),
                     Summary = table.Column<string>(nullable: true),
                     DisplayIndex = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.ProductID);
+                    table.PrimaryKey("PK_Products", x => x.ProductId);
                     table.ForeignKey(
                         name: "FK_Products_ProductCategories",
-                        column: x => x.CategoryID,
+                        column: x => x.CategoryId,
                         principalTable: "ProductCategories",
-                        principalColumn: "CategoryID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OrdersImportGoods",
-                columns: table => new
-                {
-                    OrderID = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    SupplierID = table.Column<int>(nullable: true),
-                    OrderDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    UserID = table.Column<int>(nullable: true),
-                    TotalPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrdersImportGoods", x => x.OrderID);
-                    table.ForeignKey(
-                        name: "FK_OrdersImportGoods_Suppliers",
-                        column: x => x.SupplierID,
-                        principalTable: "Suppliers",
-                        principalColumn: "SupplierID",
+                        principalColumn: "CategoryId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -309,7 +293,7 @@ namespace WebsiteBanHang.Migrations
                 name: "Address",
                 columns: table => new
                 {
-                    AddressID = table.Column<int>(nullable: false)
+                    AddressId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     FullName = table.Column<string>(nullable: true),
                     PhoneNumber = table.Column<string>(nullable: true),
@@ -318,16 +302,16 @@ namespace WebsiteBanHang.Migrations
                     Ward = table.Column<string>(maxLength: 256, nullable: true),
                     Street = table.Column<string>(maxLength: 256, nullable: true),
                     IsDefault = table.Column<bool>(nullable: false),
-                    UserID = table.Column<Guid>(nullable: false)
+                    UserId = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Address", x => x.AddressID);
+                    table.PrimaryKey("PK_Address", x => x.AddressId);
                     table.ForeignKey(
                         name: "FK_Address_UserInfo",
-                        column: x => x.UserID,
+                        column: x => x.UserId,
                         principalTable: "UserInfo",
-                        principalColumn: "UserID",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -335,10 +319,10 @@ namespace WebsiteBanHang.Migrations
                 name: "Orders",
                 columns: table => new
                 {
-                    OrderID = table.Column<int>(nullable: false)
+                    OrderId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    OrderDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    ShippedDate = table.Column<DateTime>(type: "datetime", nullable: true),
+                    OrderDate = table.Column<DateTime>(type: "datetime", nullable: false),
+                    ShippedDate = table.Column<DateTime>(type: "datetime", nullable: false),
                     Status = table.Column<int>(nullable: false),
                     PhoneNumber = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
                     FullName = table.Column<string>(maxLength: 256, nullable: true),
@@ -347,11 +331,11 @@ namespace WebsiteBanHang.Migrations
                     Ward = table.Column<string>(maxLength: 256, nullable: true),
                     Street = table.Column<string>(maxLength: 256, nullable: true),
                     TotalPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true),
-                    UserID = table.Column<Guid>(nullable: false)
+                    UserId = table.Column<Guid>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Orders", x => x.OrderID);
+                    table.PrimaryKey("PK_Orders", x => x.OrderId);
                     table.ForeignKey(
                         name: "FK_Orders_OrderStatuses",
                         column: x => x.Status,
@@ -360,10 +344,38 @@ namespace WebsiteBanHang.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Orders_UserInfo",
-                        column: x => x.UserID,
+                        column: x => x.UserId,
                         principalTable: "UserInfo",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrdersImportGoods",
+                columns: table => new
+                {
+                    OrderId = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    SupplierId = table.Column<int>(nullable: true),
+                    OrderDate = table.Column<DateTime>(type: "datetime", nullable: false),
+                    UserId = table.Column<Guid>(nullable: true),
+                    TotalPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrdersImportGoods", x => x.OrderId);
+                    table.ForeignKey(
+                        name: "FK_OrdersImportGoods_Suppliers",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "SupplierId",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_OrdersImportGoods_UserInfo",
+                        column: x => x.UserId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -381,71 +393,88 @@ namespace WebsiteBanHang.Migrations
                         name: "FK_CartDetails_Products",
                         column: x => x.ProductId,
                         principalTable: "Products",
-                        principalColumn: "ProductID",
+                        principalColumn: "ProductId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CartDetails_UserInfo",
                         column: x => x.UserId,
                         principalTable: "UserInfo",
-                        principalColumn: "UserID",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductImagse",
+                name: "EvaluationQuestions",
+                columns: table => new
+                {
+                    EvaluationId = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    Content = table.Column<string>(type: "ntext", nullable: false),
+                    ProductId = table.Column<int>(nullable: false),
+                    Rate = table.Column<int>(nullable: true),
+                    UserId = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EvaluationQuestions", x => x.EvaluationId);
+                    table.ForeignKey(
+                        name: "FK_Evaluation_Products",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "ProductId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Evaluation_UserInfo",
+                        column: x => x.UserId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductImages",
                 columns: table => new
                 {
                     ImageId = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Url = table.Column<string>(nullable: true),
-                    ProductId = table.Column<int>(nullable: false)
+                    ProductId = table.Column<int>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProductImagse", x => x.ImageId);
+                    table.PrimaryKey("PK_ProductImages", x => x.ImageId);
                     table.ForeignKey(
                         name: "FK_ProductImages_Products",
                         column: x => x.ProductId,
                         principalTable: "Products",
-                        principalColumn: "ProductID",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "ProductId",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Replies",
+                name: "OrderDetails",
                 columns: table => new
                 {
-                    ReplyID = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    ReplyDate = table.Column<DateTime>(type: "datetime", nullable: false),
-                    ReplyContent = table.Column<string>(type: "text", nullable: false),
-                    ReplyByReply = table.Column<int>(nullable: true),
-                    ProductID = table.Column<int>(nullable: false),
-                    Likes = table.Column<int>(nullable: true),
-                    IsRate = table.Column<bool>(nullable: false),
-                    Rate = table.Column<int>(nullable: true),
-                    UserID = table.Column<Guid>(nullable: true)
+                    OrderId = table.Column<int>(nullable: false),
+                    Quantity = table.Column<int>(nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
+                    ProductId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Replies", x => x.ReplyID);
+                    table.PrimaryKey("PK_OrderDetails", x => new { x.OrderId, x.ProductId });
                     table.ForeignKey(
-                        name: "FK_Replies_Products",
-                        column: x => x.ProductID,
+                        name: "FK_OrderDetails_Orders",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderDetails_Products",
+                        column: x => x.ProductId,
                         principalTable: "Products",
-                        principalColumn: "ProductID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Replies_Replies",
-                        column: x => x.ReplyByReply,
-                        principalTable: "Replies",
-                        principalColumn: "ReplyID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Replies_UserInfo",
-                        column: x => x.UserID,
-                        principalTable: "UserInfo",
-                        principalColumn: "UserID",
+                        principalColumn: "ProductId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -453,58 +482,60 @@ namespace WebsiteBanHang.Migrations
                 name: "OrderImportGoodsDetails",
                 columns: table => new
                 {
-                    OrderID = table.Column<int>(nullable: false),
-                    ProductID = table.Column<int>(nullable: false),
+                    OrderId = table.Column<int>(nullable: false),
                     Quantity = table.Column<int>(nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false)
+                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false),
+                    ProductId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderImportGoodsDetails", x => new { x.OrderID, x.ProductID });
+                    table.PrimaryKey("PK_OrderImportGoodsDetails", x => new { x.OrderId, x.ProductId });
                     table.ForeignKey(
                         name: "FK_OrderImportGoodsDetails_OrdersImportGoods",
-                        column: x => x.OrderID,
+                        column: x => x.OrderId,
                         principalTable: "OrdersImportGoods",
-                        principalColumn: "OrderID",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_OrderImportGoodsDetails_Products",
-                        column: x => x.ProductID,
+                        column: x => x.ProductId,
                         principalTable: "Products",
-                        principalColumn: "ProductID",
+                        principalColumn: "ProductId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderDetails",
+                name: "Comments",
                 columns: table => new
                 {
-                    OrderID = table.Column<int>(nullable: false),
-                    ProductID = table.Column<int>(nullable: false),
-                    Quantity = table.Column<int>(nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18, 0)", nullable: false)
+                    CommentId = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Content = table.Column<string>(maxLength: 1500, nullable: true),
+                    Date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    ParentId = table.Column<int>(nullable: false),
+                    UserId = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderDetails", x => new { x.OrderID, x.ProductID });
+                    table.PrimaryKey("PK_Comments", x => x.CommentId);
                     table.ForeignKey(
-                        name: "FK_OrderDetails_Orders",
-                        column: x => x.OrderID,
-                        principalTable: "Orders",
-                        principalColumn: "OrderID",
+                        name: "FK_Comments_Evaluation",
+                        column: x => x.ParentId,
+                        principalTable: "EvaluationQuestions",
+                        principalColumn: "EvaluationId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OrderDetails_Products",
-                        column: x => x.ProductID,
-                        principalTable: "Products",
-                        principalColumn: "ProductID",
+                        name: "FK_Comment_UserInfo",
+                        column: x => x.UserId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Address_UserID",
+                name: "IX_Address_UserId",
                 table: "Address",
-                column: "UserID");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -558,14 +589,34 @@ namespace WebsiteBanHang.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderDetails_ProductID",
-                table: "OrderDetails",
-                column: "ProductID");
+                name: "IX_Comments_ParentId",
+                table: "Comments",
+                column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderImportGoodsDetails_ProductID",
+                name: "IX_Comments_UserId",
+                table: "Comments",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluationQuestions_ProductId",
+                table: "EvaluationQuestions",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluationQuestions_UserId",
+                table: "EvaluationQuestions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderDetails_ProductId",
+                table: "OrderDetails",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderImportGoodsDetails_ProductId",
                 table: "OrderImportGoodsDetails",
-                column: "ProductID");
+                column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Status",
@@ -573,53 +624,41 @@ namespace WebsiteBanHang.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_UserID",
+                name: "IX_Orders_UserId",
                 table: "Orders",
-                column: "UserID");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrdersImportGoods_SupplierID",
+                name: "IX_OrdersImportGoods_SupplierId",
                 table: "OrdersImportGoods",
-                column: "SupplierID");
+                column: "SupplierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductImagse_ProductId",
-                table: "ProductImagse",
+                name: "IX_OrdersImportGoods_UserId",
+                table: "OrdersImportGoods",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductCategories_ParentId",
+                table: "ProductCategories",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductCategories_Url",
+                table: "ProductCategories",
+                column: "Url",
+                unique: true,
+                filter: "[Url] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductImages_ProductId",
+                table: "ProductImages",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_CategoryID",
+                name: "IX_Products_CategoryId",
                 table: "Products",
-                column: "CategoryID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Replies_ProductID",
-                table: "Replies",
-                column: "ProductID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Replies_ReplyByReply",
-                table: "Replies",
-                column: "ReplyByReply");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Replies_UserID",
-                table: "Replies",
-                column: "UserID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserInfo",
-                table: "UserInfo",
-                column: "Email",
-                unique: true,
-                filter: "[Email] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserInfo_1",
-                table: "UserInfo",
-                column: "Phone",
-                unique: true,
-                filter: "[Phone] IS NOT NULL");
+                column: "CategoryId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -646,6 +685,9 @@ namespace WebsiteBanHang.Migrations
                 name: "CartDetails");
 
             migrationBuilder.DropTable(
+                name: "Comments");
+
+            migrationBuilder.DropTable(
                 name: "Events");
 
             migrationBuilder.DropTable(
@@ -655,16 +697,16 @@ namespace WebsiteBanHang.Migrations
                 name: "OrderImportGoodsDetails");
 
             migrationBuilder.DropTable(
-                name: "ProductImagse");
-
-            migrationBuilder.DropTable(
-                name: "Replies");
+                name: "ProductImages");
 
             migrationBuilder.DropTable(
                 name: "SlideShow");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "EvaluationQuestions");
 
             migrationBuilder.DropTable(
                 name: "Orders");
@@ -679,10 +721,10 @@ namespace WebsiteBanHang.Migrations
                 name: "OrderStatuses");
 
             migrationBuilder.DropTable(
-                name: "UserInfo");
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "UserInfo");
 
             migrationBuilder.DropTable(
                 name: "ProductCategories");

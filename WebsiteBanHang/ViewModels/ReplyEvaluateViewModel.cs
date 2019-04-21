@@ -20,7 +20,7 @@ namespace WebsiteBanHang.ViewModels
         public int? Rate { get; set; }
         public Guid UserId { get; set; }
         public string FullName { get; set; }
-        public ICollection<Replies> InverseReplyByReplyNavigation { get; set; }
+        
     }
     public class PagingHeader
     {

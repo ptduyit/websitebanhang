@@ -107,7 +107,7 @@ namespace WebsiteBanHang.Controllers
             var userIdentity = _mapper.Map<User>(model);
             var result = await _userManager.CreateAsync(userIdentity, model.Password);
             if (!result.Succeeded) return new ConflictObjectResult(Errors.AddErrorsToModelState(result, ModelState));
-            await _context.UserInfo.AddAsync(new UserInfo { UserId = userIdentity.Id, Phone = model.PhoneNumber, FullName = model.FullName, BirthDate = DateTime.Now });
+            await _context.UserInfo.AddAsync(new UserInfo { UserId = userIdentity.Id, FullName = model.FullName, BirthDate = DateTime.Now });
             await _context.SaveChangesAsync();
             await _userManager.AddToRoleAsync(userIdentity, "Member");
 

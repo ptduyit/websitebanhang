@@ -74,7 +74,7 @@ namespace WebsiteBanHang.Controllers
                 }
                 var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
 
-                var jwt = await Tokens.GenerateJwt(user, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
+                var jwt = await Tokens.GenerateJwt(localUser, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
 
                 return new OkObjectResult(jwt);
             }
@@ -123,7 +123,7 @@ namespace WebsiteBanHang.Controllers
                 }
                 var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
 
-                var jwt = await Tokens.GenerateJwt(user, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
+                var jwt = await Tokens.GenerateJwt(localUser, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
 
                 return new OkObjectResult(jwt);
             }

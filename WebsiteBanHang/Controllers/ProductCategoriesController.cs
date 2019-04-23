@@ -2,29 +2,108 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class ProductCategoriesController : ControllerBase
     {
         private readonly SaleDBContext _context;
+        private readonly IMapper _mapper;
 
-        public ProductCategoriesController(SaleDBContext context)
+        public ProductCategoriesController(SaleDBContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/ProductCategories
         [HttpGet]
         public IEnumerable<ProductCategories> GetProductCategories()
         {
-            return _context.ProductCategories;
+            return _context.ProductCategories.AsNoTracking();
+        }
+
+        [HttpGet("{id}/{pagenumber}")]
+        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] int id, [FromRoute] int pagenumber)
+        {
+            int size = 1;
+
+
+            var ctg = await _context.ProductCategories.Include(p => p.Products)
+                .Include(p => p.CategoryChildrens)
+                    .ThenInclude(d => d.CategoryChildrens)
+                        .ThenInclude(c => c.CategoryChildrens)
+                .Include(p => p.CategoryChildrens)
+                    .ThenInclude(d => d.Products)
+                .Include(p => p.CategoryChildrens)
+                    .ThenInclude(d => d.CategoryChildrens)
+                        .ThenInclude(c => c.Products)
+                .Where(p => p.CategoryId == id).SingleOrDefaultAsync();
+
+
+
+            List<Products> pd = new List<Products>();
+            if (ctg.Products.Count != 0)
+            {
+                pd.AddRange(ctg.Products);
+            }
+            foreach (ProductCategories categories in ctg.CategoryChildrens)
+            {
+                if (categories.Products.Count != 0)
+                {
+                    pd.AddRange(categories.Products);
+                }
+                foreach (ProductCategories categories1 in categories.CategoryChildrens)
+                {
+                    if (categories1.Products.Count != 0)
+                    {
+                        pd.AddRange(categories1.Products);
+                    }
+                }
+            }
+
+            var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.CategoryId == id).ToList();
+            List<ProductCategories> categorySamelevel = new List<ProductCategories>();
+            var parentId = _context.ProductCategories.Find(id).ParentId;
+            if (parentId != null)
+            {
+                categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == parentId && p.CategoryId != id).ToList();
+            }
+
+            navbar.AddRange(categorySamelevel);
+            var category_map = _mapper.Map<List<ProductCategoryViewModel>>(navbar);
+
+            List<ProductCategories> parentCategory = new List<ProductCategories>();
+            int? breadId = id;
+            do
+            {
+                var bread = _context.ProductCategories.Where(p => p.CategoryId == breadId).ToList();
+                breadId = bread[0].ParentId;
+                parentCategory.AddRange(bread);
+            } while (breadId != null);
+            var breadcrumb = _mapper.Map<List<Breadcrumbs>>(parentCategory);
+            breadcrumb.Reverse();
+
+            var productInformation = _mapper.Map<List<ProductShowcaseViewModel>>(pd);
+            var product = productInformation.Skip(size * (pagenumber - 1)).Take(size).ToList();
+            int totalProducts = productInformation.Count();
+            int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
+            var outputModel = new CategoryOutputViewModel
+            {
+                Paging = new PagingHeader(totalProducts, pagenumber, size, totalPages),
+                Products = product,
+                Categories = category_map,
+                Breadcrumbs = breadcrumb
+            };
+            return Ok(outputModel);
         }
 
         // GET: api/ProductCategories/5

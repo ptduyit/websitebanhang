@@ -103,7 +103,14 @@ namespace WebsiteBanHang
                 options.AddPolicy("AllowAll", corsBuilder.Build());
             });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddJsonOptions(
+                options => {
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.Objects;
+
+                    });
+
             services.Configure<FacebookAuthSettings>(Configuration.GetSection("FacebookAuthSettings"));
             services.Configure<GoogleAuthSettings>(Configuration.GetSection("GoogleAuthSettings"));
         }

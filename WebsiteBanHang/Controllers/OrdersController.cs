@@ -167,6 +167,7 @@ namespace WebsiteBanHang.Controllers
             orders.Ward = address.Ward;
             orders.Street = address.Street;
             orders.OrderDate = DateTime.Now;
+            orders.ShippedDate = orders.OrderDate.AddDays(7);
             orders.OrderId = 0;
             orders.Status = 1;
             _context.Orders.Add(orders);

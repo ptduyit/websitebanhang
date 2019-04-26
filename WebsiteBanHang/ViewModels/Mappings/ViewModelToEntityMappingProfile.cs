@@ -14,7 +14,9 @@ namespace WebsiteBanHang.ViewModels.Mappings
             CreateMap<RegistrationViewModel, User>().ForMember(au => au.UserName, map => map.MapFrom(vm => vm.Email));
             CreateMap<Products, ProductShowcaseViewModel>().ReverseMap();
             CreateMap<ProductCategories, ProductCategoryViewModel>();
-            CreateMap<ProductCategories, Breadcrumbs>();
+            CreateMap<ProductCategories, Breadcrumbs>().ForMember(b => b.Label, map => map.MapFrom(p => p.CategoryName));
+            CreateMap<ProductCategories, Route>().ForMember(r => r.Id, map => map.MapFrom(p => p.CategoryId));
+            CreateMap<ProductCategories, Menu>();
         }
     }
 }

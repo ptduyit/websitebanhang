@@ -25,14 +25,32 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/ProductCategories
-        [HttpGet]
-        public IEnumerable<ProductCategories> GetProductCategories()
+        [HttpGet("{url}")]
+        public async Task<IActionResult> GetIdByUrl([FromRoute] string url)
         {
-            return _context.ProductCategories.AsNoTracking();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var productCategories = await _context.ProductCategories.Where(p => p.Url == url).SingleOrDefaultAsync();
+            if(productCategories == null)
+            {
+                return NotFound();
+            }
+            var route = _mapper.Map<Route>(productCategories);
+
+            return Ok(route);
+        }
+        [HttpGet]
+        public IEnumerable<Menu> GetMenu()
+        {
+            var allCategory = _context.ProductCategories.Include(p => p.CategoryChildrens).ThenInclude(d => d.CategoryChildrens).AsNoTracking().Where(p => p.ParentId == null).ToList();
+            var menu = _mapper.Map<List<Menu>>(allCategory);
+            return menu;
         }
 
-        [HttpGet("{id}/{pagenumber}")]
-        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] int id, [FromRoute] int pagenumber)
+        [HttpGet("{url}/{pagenumber}")]
+        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromRoute] int pagenumber)
         {
             int size = 1;
 
@@ -40,15 +58,18 @@ namespace WebsiteBanHang.Controllers
             var ctg = await _context.ProductCategories.Include(p => p.Products)
                 .Include(p => p.CategoryChildrens)
                     .ThenInclude(d => d.CategoryChildrens)
-                        .ThenInclude(c => c.CategoryChildrens)
+                        
                 .Include(p => p.CategoryChildrens)
                     .ThenInclude(d => d.Products)
                 .Include(p => p.CategoryChildrens)
                     .ThenInclude(d => d.CategoryChildrens)
                         .ThenInclude(c => c.Products)
-                .Where(p => p.CategoryId == id).SingleOrDefaultAsync();
+                .Where(p => p.Url == url).SingleOrDefaultAsync();
 
-
+            if(ctg == null)
+            {
+                return NotFound();
+            }
 
             List<Products> pd = new List<Products>();
             if (ctg.Products.Count != 0)
@@ -70,19 +91,19 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.CategoryId == id).ToList();
+            var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.Url == url).ToList();
             List<ProductCategories> categorySamelevel = new List<ProductCategories>();
-            var parentId = _context.ProductCategories.Find(id).ParentId;
-            if (parentId != null)
+            var productCategories = _context.ProductCategories.Where(p => p.Url == url).SingleOrDefault();
+            if (productCategories.ParentId != null)
             {
-                categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == parentId && p.CategoryId != id).ToList();
+                categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == productCategories.ParentId && p.Url != url).ToList();
             }
 
             navbar.AddRange(categorySamelevel);
             var category_map = _mapper.Map<List<ProductCategoryViewModel>>(navbar);
 
             List<ProductCategories> parentCategory = new List<ProductCategories>();
-            int? breadId = id;
+            int? breadId = productCategories.CategoryId;
             do
             {
                 var bread = _context.ProductCategories.Where(p => p.CategoryId == breadId).ToList();
@@ -100,7 +121,7 @@ namespace WebsiteBanHang.Controllers
             {
                 Paging = new PagingHeader(totalProducts, pagenumber, size, totalPages),
                 Products = product,
-                Categories = category_map,
+                Category = category_map,
                 Breadcrumbs = breadcrumb
             };
             return Ok(outputModel);

@@ -25,22 +25,6 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/ProductCategories
-        [HttpGet("{url}")]
-        public async Task<IActionResult> GetIdByUrl([FromRoute] string url)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var productCategories = await _context.ProductCategories.Where(p => p.Url == url).SingleOrDefaultAsync();
-            if(productCategories == null)
-            {
-                return NotFound();
-            }
-            var route = _mapper.Map<Route>(productCategories);
-
-            return Ok(route);
-        }
         [HttpGet]
         public IEnumerable<Menu> GetMenu()
         {
@@ -119,9 +103,9 @@ namespace WebsiteBanHang.Controllers
             int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
             var outputModel = new CategoryOutputViewModel
             {
-                Paging = new PagingHeader(totalProducts, pagenumber, size, totalPages),
+                Paging = new Paging(totalProducts, pagenumber, size, totalPages),
                 Products = product,
-                Category = category_map,
+                Categories = category_map,
                 Breadcrumbs = breadcrumb
             };
             return Ok(outputModel);

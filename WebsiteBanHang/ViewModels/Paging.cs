@@ -4,27 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang.ViewModels
 {
-    public class ReplyEvaluateViewModel
+    public class Paging
     {
-        public int ReplyId { get; set; }
-        public DateTime ReplyDate { get; set; }
-        public string ReplyContent { get; set; }
-        public int? ReplyByReply { get; set; }
-        public int ProductId { get; set; }
-        public int? Likes { get; set; }
-        public bool IsRate { get; set; }
-        public int? Rate { get; set; }
-        public Guid UserId { get; set; }
-        public string FullName { get; set; }
-        
-    }
-    public class PagingHeader
-    {
-        public PagingHeader(
+        public Paging(
            int totalItems, int pageNumber, int pageSize, int totalPages)
         {
             this.TotalItems = totalItems;
@@ -43,13 +28,5 @@ namespace WebsiteBanHang.ViewModels
                                     {
                                         ContractResolver = new CamelCasePropertyNamesContractResolver()
                                     });
-
-    }
-    
-    public class EvaluationOutPutViewModel
-    {
-        public PagingHeader Paging { get; set; }
-        public int[] Star { get; set; }
-        public List<ReplyEvaluateViewModel> Items { get; set; }
     }
 }

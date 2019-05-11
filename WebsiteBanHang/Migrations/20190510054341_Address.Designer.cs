@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang.Migrations
 {
     [DbContext(typeof(SaleDBContext))]
-    partial class SaleDBContextModelSnapshot : ModelSnapshot
+    [Migration("20190510054341_Address")]
+    partial class Address
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -597,7 +599,7 @@ namespace WebsiteBanHang.Migrations
 
             modelBuilder.Entity("WebsiteBanHang.Models.Wards", b =>
                 {
-                    b.Property<int>("WardId")
+                    b.Property<int>("WardtId")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -607,7 +609,7 @@ namespace WebsiteBanHang.Migrations
 
                     b.Property<string>("Type");
 
-                    b.HasKey("WardId");
+                    b.HasKey("WardtId");
 
                     b.HasIndex("DistrictId");
 

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -14,10 +16,12 @@ namespace WebsiteBanHang.Controllers
     public class AddressesController : ControllerBase
     {
         private readonly SaleDBContext _context;
+        private readonly IMapper _mapper;
 
-        public AddressesController(SaleDBContext context)
+        public AddressesController(SaleDBContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/Addresses/5
@@ -29,7 +33,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var address = await _context.Address.FindAsync(id);
+            var address = await _context.Address.Where(a => a.AddressId == id).Include(a => a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).SingleOrDefaultAsync();
 
             if (address == null)
             {
@@ -41,12 +45,13 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetAddressByUserId([FromRoute] Guid userId)
         {
-            var address = await _context.Address.Where(a => a.UserId == userId).ToListAsync();
+            var address = await _context.Address.Where(a => a.UserId == userId).Include(a=> a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).ToListAsync();
             if (address == null)
             {
                 return NotFound();
             }
-            return Ok(address);
+            var address_map = _mapper.Map<List<ShowAddressListViewModel>>(address);
+            return Ok(address_map);
         }
         // PUT: api/Addresses/5
         [HttpPut("{id}")]

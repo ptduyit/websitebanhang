@@ -10,7 +10,8 @@ namespace WebsiteBanHang.Models
     {
         public int ImageId { get; set; }
         public string Url { get; set; }
-        public int? ProductId { get; set; }
+        public int ProductId { get; set; }
+        public bool IsThumbnail { get; set; }
         [JsonIgnore]
         public Products Product { get; set; }
     }

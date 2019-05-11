@@ -56,8 +56,8 @@ namespace WebsiteBanHang.Controllers
                 ProductName = item.ProductName,
                 UnitPrice = item.UnitPrice,
                 Discount = item.Discount,
-                Image = item.Image,
-                Rate = item.Rate,
+                //Image = item.Image,
+                //Rate = item.Rate,
                 ProductImage = item.ProductImages
             });
         }
@@ -77,8 +77,8 @@ namespace WebsiteBanHang.Controllers
                 ProductName = i.ProductName,
                 UnitPrice = i.UnitPrice,
                 Discount = i.Discount,
-                Image = i.Image,
-                Rate = i.Rate,
+                //Image = i.Image,
+                //Rate = i.Rate,
                 Description = i.Description,
                 Guarantee = i.Guarantee,
                 Stock = i.Stock,
@@ -120,7 +120,7 @@ namespace WebsiteBanHang.Controllers
                 ProductId = i.ProductId,
                 ProductName = i.ProductName,
                 UnitPrice = i.UnitPrice,
-                Image = i.Image
+                //Image = i.Image
             }).ToListAsync();
 
             return Ok(products);
@@ -138,7 +138,7 @@ namespace WebsiteBanHang.Controllers
             {
                 return BadRequest();
             }
-            products.DateUpdated = DateTime.Now;
+            //products.DateUpdated = DateTime.Now;
             _context.Entry(products).State = EntityState.Modified;
 
             try
@@ -169,7 +169,7 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
             products.ProductId = 0;
-            products.DateUpdated = DateTime.Now;
+            //products.DateUpdated = DateTime.Now;
             _context.Products.Add(products);
             await _context.SaveChangesAsync();
 

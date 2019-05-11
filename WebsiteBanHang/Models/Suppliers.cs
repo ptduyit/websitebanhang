@@ -13,11 +13,9 @@ namespace WebsiteBanHang.Models
         public int SupplierId { get; set; }
         public string CompanyName { get; set; }
         public string Phone { get; set; }
-        public string Province { get; set; }
-        public string District { get; set; }
-        public string Ward { get; set; }
+        public int? WardId { get; set; }
         public string Address { get; set; }
-
+        public Wards Wards { get; set; }
         public ICollection<OrdersImportGoods> OrdersImportGoods { get; set; }
     }
 }

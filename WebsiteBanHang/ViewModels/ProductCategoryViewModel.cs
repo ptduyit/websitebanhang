@@ -19,15 +19,10 @@ namespace WebsiteBanHang.ViewModels
     }
     public class CategoryOutputViewModel
     {
-        public PagingHeader Paging { get; set; }
-        public List<ProductCategoryViewModel> Category { get; set; }
+        public Paging Paging { get; set; }
+        public List<ProductCategoryViewModel> Categories { get; set; }
         public List<ProductShowcaseViewModel> Products { get; set; }
         public List<Breadcrumbs> Breadcrumbs { get; set; }
-    }
-    public class Route
-    {
-        public int Id { get; set; }
-        public string Url { get; set; }
     }
     public class Menu
     {

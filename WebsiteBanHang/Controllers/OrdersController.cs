@@ -162,9 +162,9 @@ namespace WebsiteBanHang.Controllers
             orders.TotalPrice = total;
             orders.PhoneNumber = address.PhoneNumber;
             orders.FullName = address.FullName;
-            orders.Province = address.Province;
-            orders.District = address.District;
-            orders.Ward = address.Ward;
+            //orders.Province = address.Province;
+            //orders.District = address.District;
+            //orders.Ward = address.Ward;
             orders.Street = address.Street;
             orders.OrderDate = DateTime.Now;
             orders.ShippedDate = orders.OrderDate.AddDays(7);

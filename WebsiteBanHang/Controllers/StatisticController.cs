@@ -27,7 +27,6 @@ namespace WebsiteBanHang.Controllers
             //var import = _context.OrdersImportGoods.Where(p => p.OrderDate.Year == year).Sum(p => p.TotalPrice);
             //var export = _context.Orders.Where(p => p.OrderDate.Year == year).Sum(p => p.TotalPrice);
             List<StatistcOfMonth> statisticOfYear = new List<StatistcOfMonth>();
-
             for (int i = 1; i < 13; i++)
             {
                 var import = _context.OrdersImportGoods.Where(p => p.OrderDate.Year == year).Where(q => q.OrderDate.Month == i).Sum(p => p.TotalPrice);
@@ -37,10 +36,74 @@ namespace WebsiteBanHang.Controllers
                     month = i,
                     import = import.Value,
                     export = export.Value
-                });                          
+                });
             }
             return Ok(statisticOfYear);
         }
+        [HttpGet]
+        public IActionResult getYear()
+        {
+            List<decimal> years = new List<decimal>();
+            var import = _context.OrdersImportGoods;
+            var export = _context.Orders;
+            foreach (var p in import)
+            {
+                if (years.Contains(p.OrderDate.Year) == false) {
+                    years.Add(p.OrderDate.Year);
+                }
+
+            }
+            foreach (var p in export)
+            {
+                if (years.Contains(p.OrderDate.Year) == false)
+                {
+                    years.Add(p.OrderDate.Year);
+                }
+            }
+
+            return Ok(years);
+        }
+
+        [HttpGet("{year}")]
+        public IActionResult getExportsOfYear(int year)
+        {
+            int[] result = new int[12];
+            var allExport = _context.Orders.Where(p => p.OrderDate.Year == year);
+            for(int i = 0; i < 12; i++)
+            {
+                result[i] = allExport.Where(p => p.OrderDate.Month == i+1).Count();
+            }
+            return Ok(result);
+        }
+        [HttpGet]
+        public IActionResult getCretogyExportMonth(int month,int year)
+        {
+            var result = (from a in _context.OrderDetails join
+                          b in _context.Products on a.ProductId equals b.ProductId join
+                          c in _context.ProductCategories on b.CategoryId equals c.CategoryId   
+                          select new
+                          {
+                              c.CategoryId,
+                              c.CategoryName,       
+                              a.OrderId,
+                              a.ProductId,
+                              a.Quantity,
+                              a.UnitPrice,
+                              total = a.Quantity* a.UnitPrice,
+                              b.ProductName
+                          }
+
+                        );
+            var x= result.GroupBy(l => l.CategoryId).
+                Select(
+                cl=> new {
+                    cl.First().CategoryName,
+                    cl.First().CategoryId,
+                    ///dang lam dở
+            });
+            return Ok(x);
+        }
+ 
 
 
 

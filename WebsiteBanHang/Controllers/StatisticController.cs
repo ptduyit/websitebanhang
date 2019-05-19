@@ -78,18 +78,21 @@ namespace WebsiteBanHang.Controllers
         [HttpGet]
         public IActionResult getCretogyExportMonth(int month,int year)
         {
-            var result = (from a in _context.OrderDetails join
-                          b in _context.Products on a.ProductId equals b.ProductId join
+            var ord = _context.Orders.Where(pp => pp.OrderDate.Year == year).Where(qq => qq.OrderDate.Month == month);
+            var result = (from a in ord join 
+                          order in _context.OrderDetails  on a.OrderId equals order.OrderId
+                          join
+                          b in _context.Products on order.ProductId equals b.ProductId join
                           c in _context.ProductCategories on b.CategoryId equals c.CategoryId   
                           select new
                           {
                               c.CategoryId,
-                              c.CategoryName,       
-                              a.OrderId,
-                              a.ProductId,
-                              a.Quantity,
-                              a.UnitPrice,
-                              total = a.Quantity* a.UnitPrice,
+                              c.CategoryName,
+                              order.OrderId,
+                              order.ProductId,
+                              order.Quantity,
+                              order.UnitPrice,
+                              total = order.Quantity* order.UnitPrice,
                               b.ProductName
                           }
 
@@ -99,11 +102,35 @@ namespace WebsiteBanHang.Controllers
                 cl=> new {
                     cl.First().CategoryName,
                     cl.First().CategoryId,
-                    ///dang lam dở
+                    cost=cl.Sum(tt=>tt.total)
+                   
             });
             return Ok(x);
         }
- 
+
+
+        [HttpGet("{year}")]
+        public IActionResult getStatisticOfyear(int year)
+        {
+            decimal[] result = new decimal[2];
+            var export = _context.Orders.Where(p => p.OrderDate.Year == year);
+            var import = _context.OrdersImportGoods.Where(p => p.OrderDate.Year == year);
+            result[0] = (decimal)import.Sum(p => p.TotalPrice);
+            result[1] = (decimal)export.Sum(p => p.TotalPrice);
+         
+            return Ok(result);
+        }
+        [HttpGet]
+        public IActionResult getStatisticOnMonthOfYear(int year, int month)
+        {
+            decimal[] result = new decimal[2];
+            var export = _context.Orders.Where(p => p.OrderDate.Year == year).Where(q=>q.OrderDate.Month==month);
+            var import = _context.OrdersImportGoods.Where(p => p.OrderDate.Year == year).Where(q => q.OrderDate.Month == month);
+            result[0] = (decimal)import.Sum(p => p.TotalPrice);
+            result[1] = (decimal)export.Sum(p => p.TotalPrice);
+
+            return Ok(result);
+        }
 
 
 

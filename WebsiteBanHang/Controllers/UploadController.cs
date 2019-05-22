@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using WebsiteBanHang.Helpers;
+using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -38,6 +40,7 @@ namespace WebsiteBanHang.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(IFormFileCollection files)
         {
+            
             List<string> imageList = new List<string>();
             imageList = await Files.UploadAsync(files,_environment.ContentRootPath);
             return Ok(new { imageList });

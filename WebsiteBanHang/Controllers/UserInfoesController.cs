@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -14,18 +16,20 @@ namespace WebsiteBanHang.Controllers
     public class UserInfoesController : ControllerBase
     {
         private readonly SaleDBContext _context;
+        private readonly IMapper _mapper;
 
-        public UserInfoesController(SaleDBContext context)
+        public UserInfoesController(SaleDBContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/UserInfoes
         [HttpGet]
         public IActionResult GetUser()
         {
-            var query = _context.UserInfo.Join(_context.User, u => u.UserId, i => i.Id, 
-                (u, i) => new { u.UserId, i.PhoneNumber,u.Gender,u.FullName,u.BirthDate,i.Email });
+            var query = _context.UserInfo.Join(_context.User, u => u.UserId, i => i.Id,
+                (u, i) => new { u.UserId, i.PhoneNumber, u.Gender, u.FullName, u.BirthDate, i.Email });
             return Ok(query);
         }
 
@@ -38,7 +42,15 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var userInfo = await _context.UserInfo.FindAsync(id);
+            var userInfo = await _context.UserInfo.Include(u => u.User).Where(u => u.UserId == id)
+                .Select(u => new
+                {
+                    u.UserId,
+                    u.Gender,
+                    u.BirthDate,
+                    u.User.PhoneNumber,
+                    u.FullName
+                }).SingleOrDefaultAsync();
 
             if (userInfo == null)
             {
@@ -50,23 +62,26 @@ namespace WebsiteBanHang.Controllers
 
         // PUT: api/UserInfoes/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUserInfo([FromRoute] Guid id, [FromBody] UserInfo userInfo)
+        public async Task<IActionResult> PutUserInfo([FromRoute] Guid id, [FromBody] UserInfoViewModel userInfo)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
             if (id != userInfo.UserId)
             {
                 return BadRequest();
             }
-            if(userInfo.BirthDate != null)
+            if (userInfo.BirthDate != null)
             {
                 TimeSpan time = new TimeSpan(7, 0, 0);
                 userInfo.BirthDate = userInfo.BirthDate.Add(time);
             }
-            _context.Entry(userInfo).State = EntityState.Modified;
+            User user = await _context.User.FindAsync(id);
+            user.PhoneNumber = userInfo.PhoneNumber;
+            UserInfo info = _mapper.Map<UserInfo>(userInfo);
+            _context.Entry(user).State = EntityState.Modified;
+            _context.Entry(info).State = EntityState.Modified;
 
             try
             {
@@ -84,7 +99,7 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/UserInfoes

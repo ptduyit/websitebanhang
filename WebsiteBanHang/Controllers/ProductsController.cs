@@ -2,42 +2,85 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using WebsiteBanHang.Helpers;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
     [Produces("application/json")]
-    [Route("api/[controller]/[action]")]
+    [Route("api")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
+        private readonly IHostingEnvironment _environment;
         private readonly SaleDBContext _context;
+        private readonly IMapper _mapper;
 
-        public ProductsController(SaleDBContext context)
+        public ProductsController(SaleDBContext context, IMapper mapper, IHostingEnvironment environment)
         {
             _context = context;
+            _mapper = mapper;
+            _environment = environment;
         }
 
-        // GET: api/Products
-        [HttpGet]
-        public IEnumerable<Products> GetAllProducts()
+        [HttpGet("admin/[controller]")]
+        public IEnumerable<Products> GetProducts([FromQuery] int page, [FromQuery] int size)
         {
             return _context.Products;
         }
+
+        [HttpGet("admin/category-select")]
+        public async Task<IActionResult> GetCategory()
+        {
+            var category = await _context.ProductCategories.Where(p => p.CategoryChildrens.Count() == 0)
+                .Select(p => new
+                {
+                    p.CategoryId,
+                    p.CategoryName
+                }).AsNoTracking().ToListAsync();
+            if (category == null)
+                return NotFound();
+            return Ok(category);
+        }
+
+        [HttpGet("admin/[controller]/{id}")]
+        public async Task<IActionResult> GetProductById([FromRoute] int id)
+        {
+            var products = await _context.Products.Include(p => p.ProductImages).Include(p => p.OrderImportGoodsDetails).ThenInclude(o => o.Order).Where(p => p.ProductId == id).FirstOrDefaultAsync();
+
+            if (products == null)
+            {
+                return NotFound();
+            }
+            var price = products.OrderImportGoodsDetails;
+            var map_price = _mapper.Map<List<PriceImport>>(price);
+
+            var result = new ProductPriceImportViewModel
+            {
+                Products = products,
+                PriceImport = map_price
+            };
+
+            return Ok(result);
+        }
+
         [HttpGet("{search}")]
         public IEnumerable<Products> SearchProducts([FromRoute] string search)
         {
             var query = new string[]
-{
-    "abc foo bar xyz john doe",
-    "abc foo bar xyz doe",
-    "hello world",
-    "abc foo bar john doe",
-};
+            {
+                "abc foo bar xyz john doe",
+                "abc foo bar xyz doe",
+                "hello world",
+                "abc foo bar john doe",
+            };
             var abc = "abc john world";
             var searchstrings = abc.Split(' ');
 
@@ -47,10 +90,33 @@ namespace WebsiteBanHang.Controllers
                                .Where(x => searchstrings.Any(y => x.Contains(y)));
             return _context.Products;
         }
-        [HttpGet]
-        public IQueryable<ViewModelProduct> GetIndexProducts()
+        [HttpGet("admin/[controller]/search/{keyword}")]
+        public async Task<IActionResult> Recommend([FromRoute] string keyword)
         {
-            return _context.Products.Include(p => p.ProductImages).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ViewModelProduct
+            
+            if (Int32.TryParse(keyword, out int id))
+            {
+                var results = await _context.Products.Where(x => x.ProductId == id).Select(x => new
+                {
+                    x.ProductId,
+                    x.ProductName
+                }).ToListAsync();
+                return Ok(results);
+            }
+            var searchString = keyword.Split(' ');
+            searchString = searchString.Select(x => x.ToLower()).ToArray();
+            var rs = await _context.Products.Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s))).Select(x => new
+            {
+                x.ProductId,
+                x.ProductName
+            }).ToListAsync();
+            return Ok(rs);
+        }
+
+        [HttpGet("products_show")]
+        public IQueryable<ProductsViewModel> GetProductsShow()//GetIndexProducts
+        {
+            return _context.Products.Include(p => p.ProductImages).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ProductsViewModel
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
@@ -68,7 +134,7 @@ namespace WebsiteBanHang.Controllers
             var stock = await _context.Products.Where(p => p.ProductId == id).Select(i => new { i.Stock }).SingleOrDefaultAsync();
             return Ok(stock);
         }
-        [HttpGet("{id}")]
+        [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
             var product = await _context.Products.Include(p => p.ProductImages).Select(i => new ProductInformationViewModel
@@ -89,23 +155,7 @@ namespace WebsiteBanHang.Controllers
             return Ok(product);
         }
         // GET: api/Products/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetProductById([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            var products = await _context.Products.Include(p => p.ProductImages).Where(p => p.ProductId == id).FirstOrDefaultAsync();
-
-            if (products == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(products);
-        }
 
         [HttpGet("{name}")]
         public async Task<IActionResult> GetProductByName([FromRoute] string name)
@@ -126,23 +176,38 @@ namespace WebsiteBanHang.Controllers
             return Ok(products);
         }
         // PUT: api/Products/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProducts([FromRoute] int id, [FromBody] Products products)
+        [HttpPut("[controller]/{id}")]
+        public async Task<IActionResult> PutProducts(IFormFileCollection files, [FromRoute] int id, [FromForm] string productObject)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            Products products = JsonConvert.DeserializeObject<Products>(productObject);
+
             if (id != products.ProductId)
             {
                 return BadRequest();
             }
-            //products.DateUpdated = DateTime.Now;
+            
             _context.Entry(products).State = EntityState.Modified;
 
             try
             {
+                List<string> imageList = new List<string>();
+                imageList = await Files.UploadAsync(files, _environment.ContentRootPath);
+                foreach (var image in imageList)
+                {
+                    var productImages = new ProductImages
+                    {
+                        ProductId = products.ProductId,
+                        Url = image,
+                        IsThumbnail = true,
+                        CreateAt = DateTime.Now
+                    };
+                    await _context.ProductImages.AddAsync(productImages);
+                }
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -161,23 +226,41 @@ namespace WebsiteBanHang.Controllers
         }
 
         // POST: api/Products
-        [HttpPost]
-        public async Task<IActionResult> PostProducts([FromBody] Products products)
+        [HttpPost("[controller]")]
+        public async Task<IActionResult> PostProducts(IFormFileCollection files, [FromForm] string productObject)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            Products products = JsonConvert.DeserializeObject<Products>(productObject);
             products.ProductId = 0;
-            //products.DateUpdated = DateTime.Now;
-            _context.Products.Add(products);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetProductById", new { id = products.ProductId }, products);
+            products.CreateAt = DateTime.Now;
+            await _context.Products.AddAsync(products);
+            try
+            {
+                await _context.SaveChangesAsync();
+                List<string> imageList = new List<string>();
+                imageList = await Files.UploadAsync(files, _environment.ContentRootPath);
+                foreach (var image in imageList)
+                {
+                    var productImages = new ProductImages
+                    {
+                        ProductId = products.ProductId,
+                        Url = image,
+                        IsThumbnail = true,
+                        CreateAt = DateTime.Now
+                    };
+                    await _context.ProductImages.AddAsync(productImages);
+                    
+                }
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw;
+            }
+            return Ok();
         }
 
         // DELETE: api/Products/5
-        [HttpDelete("{id}")]
+        [HttpDelete("[controller]/{id}")]
         public async Task<IActionResult> DeleteProducts([FromRoute] int id)
         {
             if (!ModelState.IsValid)

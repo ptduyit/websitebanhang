@@ -10,8 +10,8 @@ using WebsiteBanHang.Models;
 namespace WebsiteBanHang.Migrations
 {
     [DbContext(typeof(SaleDBContext))]
-    [Migration("20190511104527_updateward")]
-    partial class updateward
+    [Migration("20190516073509_CreateDB")]
+    partial class CreateDB
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -416,9 +416,14 @@ namespace WebsiteBanHang.Migrations
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<DateTime>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("getdate()");
+
                     b.Property<bool>("IsThumbnail");
 
-                    b.Property<int>("ProductId");
+                    b.Property<int?>("ProductId");
 
                     b.Property<string>("Url");
 
@@ -436,6 +441,11 @@ namespace WebsiteBanHang.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int>("CategoryId");
+
+                    b.Property<DateTime>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("getdate()");
 
                     b.Property<string>("Description")
                         .HasColumnType("ntext");

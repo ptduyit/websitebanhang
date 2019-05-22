@@ -39,15 +39,22 @@ namespace WebsiteBanHang.Controllers
             int size = 1;
 
 
-            var ctg = await _context.ProductCategories.Include(p => p.Products)
+            var ctg = await _context.ProductCategories.Include(p => p.Products).ThenInclude(i => i.ProductImages)
                 .Include(p => p.CategoryChildrens)
                     .ThenInclude(d => d.CategoryChildrens)
                         
                 .Include(p => p.CategoryChildrens)
-                    .ThenInclude(d => d.Products)
+                    .ThenInclude(d => d.Products).ThenInclude(i => i.ProductImages)
                 .Include(p => p.CategoryChildrens)
                     .ThenInclude(d => d.CategoryChildrens)
-                        .ThenInclude(c => c.Products)
+                        .ThenInclude(c => c.Products).ThenInclude(i => i.ProductImages)
+
+                .Include(p => p.Products).ThenInclude(r => r.EvaluationQuestions)
+                .Include(p => p.CategoryChildrens)
+                    .ThenInclude(d => d.Products).ThenInclude(r => r.EvaluationQuestions)
+                .Include(p => p.CategoryChildrens)
+                    .ThenInclude(d => d.CategoryChildrens)
+                        .ThenInclude(c => c.Products).ThenInclude(r => r.EvaluationQuestions)
                 .Where(p => p.Url == url).SingleOrDefaultAsync();
 
             if(ctg == null)
@@ -97,9 +104,35 @@ namespace WebsiteBanHang.Controllers
             var breadcrumb = _mapper.Map<List<Breadcrumbs>>(parentCategory);
             breadcrumb.Reverse();
 
-            var productInformation = _mapper.Map<List<ProductShowcaseViewModel>>(pd);
-            var product = productInformation.Skip(size * (pagenumber - 1)).Take(size).ToList();
-            int totalProducts = productInformation.Count();
+            List<ProductShowcaseViewModel> productShowcase = new List<ProductShowcaseViewModel>();
+            foreach (var products in pd)
+            {
+                if(products.Stock != 0 && !products.Discontinued)
+                {
+                    float star = 0;
+                    int totalStar;
+                    var evaluation = products.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == products.ProductId).ToList();
+                    for (int i = 1; i <= 5; i++)
+                    {
+                        star += i * evaluation.Where(e => e.Rate == i).Count();
+                    }
+                    totalStar = evaluation.Count();
+                    if (totalStar > 0)
+                        star = star / totalStar;
+                    else star = 0;
+                    productShowcase.Add(new ProductShowcaseViewModel {
+                        ProductId = products.ProductId,
+                        Discount = products.Discount,
+                        ProductName = products.ProductName,
+                        UnitPrice = products.UnitPrice,
+                        Rate = star,
+                        TotalRate = totalStar,
+                        Image = products.ProductImages.FirstOrDefault()?.Url
+                    });
+                } 
+            }
+            var product = productShowcase.Skip(size * (pagenumber - 1)).Take(size).ToList();
+            int totalProducts = productShowcase.Count();
             int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
             var outputModel = new CategoryOutputViewModel
             {

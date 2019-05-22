@@ -120,6 +120,7 @@ namespace WebsiteBanHang.Models
             modelBuilder.Entity<ProductImages>(entity =>
             {
                 entity.HasKey(e => e.ImageId);
+                entity.Property(e => e.CreateAt).HasColumnType("datetime").HasDefaultValueSql("getdate()");
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductImages)
                     .HasForeignKey(d => d.ProductId)
@@ -228,7 +229,7 @@ namespace WebsiteBanHang.Models
             {
                 entity.HasKey(e => e.ProductId);
 
-                //entity.Property(e => e.DateUpdated).HasColumnType("datetime");
+                entity.Property(e => e.CreateAt).HasColumnType("datetime").HasDefaultValueSql("getdate()");
 
                 entity.Property(e => e.Description).HasColumnType("ntext");
 

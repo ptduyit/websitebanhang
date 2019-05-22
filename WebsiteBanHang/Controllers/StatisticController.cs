@@ -44,7 +44,7 @@ namespace WebsiteBanHang.Controllers
                          ProductId = g.Key.ProductId,
                          ProductName = g.Key.ProductName,
                          UnitPrice = g.Key.UnitPrice,
-                         TotalQuantity = g.Sum()
+                         //TotalQuantity = g.Sum()
                      }
              );
 

@@ -5,15 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Migrations\20190422134459_test.cs" />
-    <Compile Remove="Migrations\20190422134459_test.Designer.cs" />
-    <Compile Remove="Migrations\20190510053007_Address.cs" />
-    <Compile Remove="Migrations\20190510053007_Address.Designer.cs" />
-    <Compile Remove="Migrations\20190510054215_Address2.cs" />
-    <Compile Remove="Migrations\20190510054215_Address2.Designer.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Resources\" />
     <Folder Include="ViewModels\Validations\" />
     <Folder Include="wwwroot\" />

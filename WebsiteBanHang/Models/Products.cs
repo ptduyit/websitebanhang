@@ -19,7 +19,7 @@ namespace WebsiteBanHang.Models
         public string ProductName { get; set; }
         public int CategoryId { get; set; }
         public decimal UnitPrice { get; set; }
- 
+        public DateTime CreateAt { get; set; }
         public bool Discontinued { get; set; }
         public double Discount { get; set; }
         public int Stock { get; set; }
@@ -28,7 +28,7 @@ namespace WebsiteBanHang.Models
 
         public string Summary { get; set; }
         public bool DisplayIndex { get; set; }
-        
+        [JsonIgnore]
         public ProductCategories Category { get; set; }
         [JsonIgnore]
         public ICollection<OrderDetails> OrderDetails { get; set; }

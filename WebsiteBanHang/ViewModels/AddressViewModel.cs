@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace WebsiteBanHang.ViewModels
 {
-    public class ShowAddressListViewModel
+    public class AddressListViewModel
     {
         public int AddressId { get; set; }
         public string FullName { get; set; }

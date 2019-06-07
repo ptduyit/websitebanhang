@@ -53,20 +53,74 @@ namespace WebsiteBanHang.Controllers
         }
 
         // PUT: api/OrdersImportGoods/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrdersImportGoods([FromRoute] int id, [FromBody] OrdersImportGoods ordersImportGoods)
+        [HttpPut("order-import/{id}/save")]
+        public async Task<IActionResult> SaveOrdersImportGoods([FromRoute] int id, [FromBody] OrderImportUpdateViewModel ordersView)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != ordersImportGoods.OrderId)
+            if (id != ordersView.OrderId)
             {
                 return BadRequest();
             }
+            var orders = await _context.OrdersImportGoods.FindAsync(id);
+            orders.SupplierId = ordersView.SupplierId;
 
-            _context.Entry(ordersImportGoods).State = EntityState.Modified;
+            decimal totalPrice = 0;
+            foreach(var detail in ordersView.Product)
+            {
+                totalPrice += detail.Quantity * detail.UnitPrice;
+                detail.OrderId = id;
+                _context.Entry(detail).State = EntityState.Modified;
+                //update stock
+                var product = await _context.Products.FindAsync(detail.ProductId);
+                product.Stock += detail.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
+            }
+            orders.TotalPrice = totalPrice;
+            _context.Entry(orders).State = EntityState.Modified;
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!OrdersImportGoodsExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        [HttpPut("order-import/{id}/temp")]
+        public async Task<IActionResult> TempOrdersImportGoods([FromRoute] int id, [FromBody] OrderImportUpdateViewModel ordersView)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != ordersView.OrderId)
+            {
+                return BadRequest();
+            }
+            var orders = await _context.OrdersImportGoods.FindAsync(id);
+            orders.SupplierId = ordersView.SupplierId;
+            orders.TotalPrice = 0;
+            _context.Entry(orders).State = EntityState.Modified;
+
+            foreach (var detail in ordersView.Product)
+            {
+                detail.OrderId = id;
+                _context.Entry(detail).State = EntityState.Modified;
+            }
 
             try
             {
@@ -86,7 +140,6 @@ namespace WebsiteBanHang.Controllers
 
             return NoContent();
         }
-
         // POST: api/OrdersImportGoods
         [HttpPost("order-import")]
         public async Task<IActionResult> CreateOrdersImportGoods([FromBody] OrderImportFirstViewModel order)
@@ -95,7 +148,8 @@ namespace WebsiteBanHang.Controllers
             {
                 OrderDate = DateTime.Now,
                 SupplierId = order.SupplierId,
-                UserId = order.UserId
+                UserId = order.UserId,
+                TotalPrice = 0
             };
             orders.OrderImportGoodsDetails.Add(new OrderImportGoodsDetails
             {
@@ -103,7 +157,7 @@ namespace WebsiteBanHang.Controllers
                 Quantity = 0,
                 UnitPrice = 0
             });
-
+            
             _context.OrdersImportGoods.Add(orders);
             await _context.SaveChangesAsync();
             

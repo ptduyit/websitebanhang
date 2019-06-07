@@ -104,7 +104,7 @@ namespace WebsiteBanHang.Controllers
             _context.Suppliers.Add(suppliers);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSuppliers", new { id = suppliers.SupplierId }, suppliers);
+            return StatusCode(201,new { id = suppliers.SupplierId , name = suppliers.CompanyName});
         }
 
         // DELETE: api/Suppliers/5

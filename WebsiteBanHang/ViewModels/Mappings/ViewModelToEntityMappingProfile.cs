@@ -19,13 +19,10 @@ namespace WebsiteBanHang.ViewModels.Mappings
             CreateMap<ProductCategories, Breadcrumbs>().ForMember(b => b.Label, map => map.MapFrom(p => p.CategoryName));
             CreateMap<ProductCategories, Menu>();
 
-            CreateMap<OrderImportGoodsDetails, PriceImport>().ForMember(v => v.UnitPrice, map => map.MapFrom(c => c.UnitPrice))
-                    .ForMember(v => v.OrderDate, map => map.MapFrom(c => c.Order.OrderDate));
-
             CreateMap<EvaluationQuestions, EvaluationQuestionsViewModel>().ForMember(v => v.FullName, map => map.MapFrom(e => e.User.FullName));
             CreateMap<Comments, CommentsViewModel>().ForMember(v => v.FullName, map => map.MapFrom(c => c.User.FullName));
 
-            CreateMap<Address, ShowAddressListViewModel>().ForPath(v => v.Location.Ward, map => map.MapFrom(c => c.Wards.Name))
+            CreateMap<Address, AddressListViewModel>().ForPath(v => v.Location.Ward, map => map.MapFrom(c => c.Wards.Name))
                         .ForPath(v => v.Location.District, map => map.MapFrom(c => c.Wards.Districts.Name))
                         .ForPath(v => v.Location.Province, map => map.MapFrom(c => c.Wards.Districts.Provinces.Name));
 
@@ -34,8 +31,10 @@ namespace WebsiteBanHang.ViewModels.Mappings
                 .ForMember(v => v.FullName, map => map.MapFrom(c => c.User.FullName))
                 .ForMember(v => v.CompanyName, map => map.MapFrom(c => c.Supplier.CompanyName));
             
-                CreateMap<OrderImportGoodsDetails, ImportDetailProductViewModel>()
+            CreateMap<OrderImportGoodsDetails, ImportDetailProductViewModel>()
                 .ForMember(v => v.ProductName, map => map.MapFrom(c => c.Product.ProductName));
+
+            CreateMap<Products, ProductInformationViewModel>();
 
         }
     }

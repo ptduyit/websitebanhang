@@ -11,7 +11,7 @@ namespace WebsiteBanHang.Helpers
 {
     public class Files
     {
-        public static async Task<List<string>> UploadAsync(IFormFileCollection files, string pathServer)
+        public static async Task<List<string>> UploadAsync(List<IFormFile> files, string pathServer)
         {
             string folderName = Path.Combine("Resources", "Images");
             string pathToSave = Path.Combine(pathServer, folderName);
@@ -51,19 +51,15 @@ namespace WebsiteBanHang.Helpers
             }
             return imageList;
         }
-        public static bool Delete(string fileName, string pathServer)
+        public static bool Delete(string pathfileName, string pathServer)
         {
-            var folderName = Path.Combine("Resources", "Images");
-            var path = Path.Combine(pathServer, folderName);
-
-            string fileDelete = Path.Combine(path, fileName);
+            string fileDelete = Path.Combine(pathServer, pathfileName);
             if (File.Exists(fileDelete))
             {
                 File.Delete(fileDelete);
+                return true;
             }
-            else return false;
-            return true;
-
+            return false;
         }
     }
 }

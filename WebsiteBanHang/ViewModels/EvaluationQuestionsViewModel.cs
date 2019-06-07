@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,8 +29,27 @@ namespace WebsiteBanHang.ViewModels
     public class EvaluationOutputViewModel
     {
         public Paging Paging { get; set; }
-        public int[] Star { get; set; }
+        public Rating Rating { get; set; }
         public List<EvaluationQuestionsViewModel> Evaluations { get; set; }
+    }
+    public class Rating
+    {
+        public Rating(float star, int total, int[] starList)
+        {
+            this.Star = star;
+            this.Total = total;
+            this.StarList = starList;
+        }
+
+        public float Star { get; set; }
+        public int Total { get; set; }
+        public int[] StarList { get; set; }
+
+        public string ToJson() => JsonConvert.SerializeObject(this,
+                                    new JsonSerializerSettings
+                                    {
+                                        ContractResolver = new CamelCasePropertyNamesContractResolver()
+                                    });
     }
     public class QuestionOutputViewModel
     {

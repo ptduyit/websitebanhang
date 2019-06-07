@@ -50,7 +50,7 @@ namespace WebsiteBanHang.Controllers
             {
                 return NotFound();
             }
-            var address_map = _mapper.Map<List<ShowAddressListViewModel>>(address);
+            var address_map = _mapper.Map<List<AddressListViewModel>>(address);
             return Ok(address_map);
         }
         // PUT: api/Addresses/5

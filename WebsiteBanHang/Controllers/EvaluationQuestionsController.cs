@@ -11,7 +11,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api")]
     [ApiController]
     public class EvaluationQuestionsController : ControllerBase
     {
@@ -25,56 +25,53 @@ namespace WebsiteBanHang.Controllers
 
         }
 
-        // GET: api/EvaluationQuestions
-        [HttpGet]
-        public IEnumerable<EvaluationQuestions> GetEvaluationQuestions()
+        [HttpGet("evaluations")]
+        public async Task<IActionResult> GetEvaluation([FromQuery] int productid, [FromQuery] int pagenumber)
         {
-            return _context.EvaluationQuestions;
-        }
-
-        // GET: api/EvaluationQuestions/5
-        [HttpGet("{productid}/{pagenumber}")]
-        public async Task<IActionResult> GetEvaluation([FromRoute] int productid, [FromRoute] int pagenumber)
-        {
-            int size = 1;
+            int size = 3;
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var evaluationQuestions = await _context.EvaluationQuestions.Include(e => e.User).Include(e => e.Comments).ThenInclude(c => c.User).Where(e => e.ProductId == productid && e.Rate != null).ToListAsync();
+            var evaluations = await _context.EvaluationQuestions.Include(e => e.User)
+                .Include(e => e.Comments).ThenInclude(c => c.User)
+                .Where(e => e.ProductId == productid && e.Rate != null)
+                .ToListAsync();
             
-
-            if (evaluationQuestions == null)
+            if (evaluations == null)
             {
                 return NotFound();
             }
-            var eval_map = _mapper.Map<List<EvaluationQuestionsViewModel>>(evaluationQuestions);
-            var eval = eval_map.Skip(size * (pagenumber - 1)).Take(size).ToList();
+            var eval_map = _mapper.Map<List<EvaluationQuestionsViewModel>>(evaluations);
+
+            //paging
             int totalEval = eval_map.Count();
             int totalPages = (int)Math.Ceiling(totalEval / (float)size);
+            pagenumber = (pagenumber < 1) ? 1 : ((pagenumber > totalPages) ? totalPages : pagenumber);//range page
+            var eval = eval_map.Skip(size * (pagenumber - 1)).Take(size).ToList();
+
+            //get rating
+            float star = 0;
+            int[] starList = new int[5];
+            for (int i = 1; i <= 5; i++)
+            {
+                int temp = eval_map.Where(e => e.Rate == i).Count();
+                starList[i - 1] = temp;
+                star += i * temp;
+            }
+            int totalStar = eval_map.Count();
+            if (totalStar > 0)
+                star = (float)Math.Round((double)star / totalStar,1);
+            else star = 0;
+
             var output = new EvaluationOutputViewModel
             {
                 Paging = new Paging(totalEval, pagenumber, size, totalPages),
-                Star = ListStar(eval_map),
+                Rating = new Rating(star, totalStar, starList),
                 Evaluations = eval
             };
             return Ok(output);
-        }
-
-        public int[] ListStar(List<EvaluationQuestionsViewModel> evaluations)
-        {
-            int[] rs = new int[5];
-            for (int i = 0; i < 5; i++)
-            {
-                rs[i] = GetStar(evaluations, i + 1);
-            }
-            return rs;
-        }
-
-        public int GetStar(List<EvaluationQuestionsViewModel> evaluations, int star)
-        {
-            return evaluations.Where(e => e.Rate == star).Count();
         }
 
         [HttpGet("{productid}/{pagenumber}")]
@@ -142,17 +139,17 @@ namespace WebsiteBanHang.Controllers
 
         // POST: api/EvaluationQuestions
         [HttpPost]
-        public async Task<IActionResult> PostEvaluationQuestions([FromBody] EvaluationQuestions evaluationQuestions)
+        public async Task<IActionResult> PostEvaluationQuestions([FromBody] EvaluationQuestions evaluation)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            _context.EvaluationQuestions.Add(evaluationQuestions);
+            evaluation.Date = DateTime.Now;
+            _context.EvaluationQuestions.Add(evaluation);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEvaluationQuestions", new { id = evaluationQuestions.EvaluationId }, evaluationQuestions);
+            return StatusCode(201);
         }
 
         // DELETE: api/EvaluationQuestions/5
@@ -175,7 +172,35 @@ namespace WebsiteBanHang.Controllers
 
             return Ok(evaluationQuestions);
         }
+        [HttpGet("comments/{id}")]
+        public async Task<IActionResult> GetComments(int id)
+        {
+            var comment = await _context.Comments.Include(p => p.User).Where(p => p.CommentId == id).SingleOrDefaultAsync();
+            if (comment == null)
+            {
+                return NotFound();
+            }
+            var comment_map = _mapper.Map<CommentsViewModel>(comment);
+            return Ok(comment_map);
+        }
+        [HttpPost("comments")]
+        public async Task<IActionResult> PostComment(Comments comments)
+        {
+            comments.Date = DateTime.Now;
+            _context.Comments.Add(comments);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
 
+            }
+            var comment = await _context.Comments.Include(p => p.User).Where(p => p.CommentId == comments.CommentId).SingleOrDefaultAsync();
+            var comment_map = _mapper.Map<CommentsViewModel>(comment);
+
+            return CreatedAtAction("GetComments", new { id = comments.CommentId },comment_map);
+        }
         private bool EvaluationQuestionsExists(int id)
         {
             return _context.EvaluationQuestions.Any(e => e.EvaluationId == id);

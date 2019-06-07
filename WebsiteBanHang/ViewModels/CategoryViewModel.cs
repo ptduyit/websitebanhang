@@ -31,4 +31,9 @@ namespace WebsiteBanHang.ViewModels
         public string Url { get; set; }
         public List<Menu> CategoryChildrens { get; set; }
     }
+    public class CategorySelectViewModel
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+    }
 }

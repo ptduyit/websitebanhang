@@ -36,60 +36,28 @@ namespace WebsiteBanHang.Controllers
             return _context.Products;
         }
 
-        [HttpGet("admin/category-select")]
-        public async Task<IActionResult> GetCategory()
-        {
-            var category = await _context.ProductCategories.Where(p => p.CategoryChildrens.Count() == 0)
-                .Select(p => new
-                {
-                    p.CategoryId,
-                    p.CategoryName
-                }).AsNoTracking().ToListAsync();
-            if (category == null)
-                return NotFound();
-            return Ok(category);
-        }
-
         [HttpGet("admin/[controller]/{id}")]
         public async Task<IActionResult> GetProductById([FromRoute] int id)
         {
-            var products = await _context.Products.Include(p => p.ProductImages).Include(p => p.OrderImportGoodsDetails).ThenInclude(o => o.Order).Where(p => p.ProductId == id).FirstOrDefaultAsync();
+            var products = await _context.Products.Include(p => p.ProductImages).Include(p => p.OrderImportGoodsDetails)
+                .Where(p => p.ProductId == id).FirstOrDefaultAsync();
+            products.ProductImages = products.ProductImages.Where(p => p.IsThumbnail == true).ToList();
 
             if (products == null)
             {
                 return NotFound();
             }
-            var price = products.OrderImportGoodsDetails;
-            var map_price = _mapper.Map<List<PriceImport>>(price);
+            var price = products.OrderImportGoodsDetails.OrderByDescending(x => x.OrderId).Take(1).FirstOrDefault();
 
             var result = new ProductPriceImportViewModel
             {
                 Products = products,
-                PriceImport = map_price
+                PriceImport = price.UnitPrice
             };
 
             return Ok(result);
         }
 
-        [HttpGet("{search}")]
-        public IEnumerable<Products> SearchProducts([FromRoute] string search)
-        {
-            var query = new string[]
-            {
-                "abc foo bar xyz john doe",
-                "abc foo bar xyz doe",
-                "hello world",
-                "abc foo bar john doe",
-            };
-            var abc = "abc john world";
-            var searchstrings = abc.Split(' ');
-
-            searchstrings = searchstrings.Select(x => x.ToLower()).ToArray();
-
-            var results = query.Select(x => x.ToLower())
-                               .Where(x => searchstrings.Any(y => x.Contains(y)));
-            return _context.Products;
-        }
         [HttpGet("admin/[controller]/search/{keyword}")]
         public async Task<IActionResult> Recommend([FromRoute] string keyword)
         {
@@ -137,22 +105,24 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
-            var product = await _context.Products.Include(p => p.ProductImages).Select(i => new ProductInformationViewModel
-            {
-                ProductId = i.ProductId,
-                ProductName = i.ProductName,
-                UnitPrice = i.UnitPrice,
-                Discount = i.Discount,
-                //Image = i.Image,
-                //Rate = i.Rate,
-                Description = i.Description,
-                Guarantee = i.Guarantee,
-                Stock = i.Stock,
-                Summary = i.Summary,
-                ProductImage = i.ProductImages
-            }).SingleOrDefaultAsync(x => x.ProductId == id);
+            var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).SingleOrDefaultAsync(x => x.ProductId == id);
+            product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
 
-            return Ok(product);
+            var product_map = _mapper.Map<ProductInformationViewModel>(product);
+            float star = 0;
+            var evaluation = product.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == product.ProductId).ToList();
+            for (int i = 1; i <= 5; i++)
+            {
+                star += i * evaluation.Where(e => e.Rate == i).Count();
+            }
+            int totalStar = evaluation.Count();
+            if (totalStar > 0)
+                star = (float)Math.Round((double)star / totalStar, 1);
+            else star = 0;
+
+            product_map.NumRate = totalStar;
+            product_map.Rate = star;
+            return Ok(product_map);
         }
         // GET: api/Products/5
 
@@ -176,38 +146,48 @@ namespace WebsiteBanHang.Controllers
             return Ok(products);
         }
         // PUT: api/Products/5
-        [HttpPut("[controller]/{id}")]
-        public async Task<IActionResult> PutProducts(IFormFileCollection files, [FromRoute] int id, [FromForm] string productObject)
+        [HttpPut("admin/[controller]/{id}")]
+        public async Task<IActionResult> PutProducts([FromForm] List<IFormFile> files, [FromRoute] int id, [FromForm] string product, [FromForm] string imageDelete)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            Products products = JsonConvert.DeserializeObject<Products>(productObject);
+            Products products = JsonConvert.DeserializeObject<Products>(product);
+            List<ImageDeleteViewModel> images = JsonConvert.DeserializeObject<List<ImageDeleteViewModel>> (imageDelete);
 
             if (id != products.ProductId)
             {
                 return BadRequest();
             }
             
-            _context.Entry(products).State = EntityState.Modified;
+            _context.Entry(products).State = EntityState.Modified; //modify product
 
+            var imageList = await Files.UploadAsync(files, _environment.ContentRootPath); //upload image
+            foreach (var image in imageList)
+            {
+                var productImages = new ProductImages
+                {
+                    ProductId = products.ProductId,
+                    Url = image,
+                    IsThumbnail = true,
+                    CreateAt = DateTime.Now
+                };
+                await _context.ProductImages.AddAsync(productImages);
+            }
+            
+            foreach( var image in images)
+            {
+                if (Files.Delete(image.Path, _environment.ContentRootPath))
+                {
+                    var ProductImages = _context.ProductImages.Find(image.ImageId);
+                    if(ProductImages != null)
+                        _context.ProductImages.Remove(ProductImages);
+                }
+            }
             try
             {
-                List<string> imageList = new List<string>();
-                imageList = await Files.UploadAsync(files, _environment.ContentRootPath);
-                foreach (var image in imageList)
-                {
-                    var productImages = new ProductImages
-                    {
-                        ProductId = products.ProductId,
-                        Url = image,
-                        IsThumbnail = true,
-                        CreateAt = DateTime.Now
-                    };
-                    await _context.ProductImages.AddAsync(productImages);
-                }
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -224,40 +204,61 @@ namespace WebsiteBanHang.Controllers
 
             return NoContent();
         }
-
-        // POST: api/Products
-        [HttpPost("[controller]")]
-        public async Task<IActionResult> PostProducts(IFormFileCollection files, [FromForm] string productObject)
+        [HttpPost("admin/[controller]/quick-add")]
+        public async Task<IActionResult> QuickAddProduct(QuickAddProductViewModel productAdd)
         {
-            Products products = JsonConvert.DeserializeObject<Products>(productObject);
-            products.ProductId = 0;
-            products.CreateAt = DateTime.Now;
-            await _context.Products.AddAsync(products);
-            try
+            int orderId = productAdd.OrderId;
+            var product = new Products
             {
-                await _context.SaveChangesAsync();
-                List<string> imageList = new List<string>();
-                imageList = await Files.UploadAsync(files, _environment.ContentRootPath);
-                foreach (var image in imageList)
+                ProductName = productAdd.ProductName,
+                CategoryId = productAdd.CategoryId,
+                CreateAt = DateTime.Now,
+                Description = "",
+                Discontinued = true,
+                DisplayIndex = false,
+                Discount = 0,
+                Stock = 0,
+                UnitPrice = 0,
+                Summary = "",
+                Guarantee = 0
+            };
+            await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+            if(productAdd.OrderId > 0)
+            {
+                var orderDetail = new OrderImportGoodsDetails
                 {
-                    var productImages = new ProductImages
-                    {
-                        ProductId = products.ProductId,
-                        Url = image,
-                        IsThumbnail = true,
-                        CreateAt = DateTime.Now
-                    };
-                    await _context.ProductImages.AddAsync(productImages);
-                    
-                }
+                    OrderId = productAdd.OrderId,
+                    ProductId = product.ProductId,
+                    Quantity = productAdd.Quantity,
+                    UnitPrice = productAdd.UnitPrice
+                };
+                _context.OrderImportGoodsDetails.Add(orderDetail);
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            else
             {
-                throw;
+                OrdersImportGoods orders = new OrdersImportGoods
+                {
+                    OrderDate = DateTime.Now,
+                    SupplierId = productAdd.SupplierId,
+                    UserId = productAdd.UserId,
+                    TotalPrice = 0
+                };
+                orders.OrderImportGoodsDetails.Add(new OrderImportGoodsDetails
+                {
+                    ProductId = product.ProductId,
+                    Quantity = productAdd.Quantity,
+                    UnitPrice = productAdd.UnitPrice
+                });
+                _context.OrdersImportGoods.Add(orders);
+                await _context.SaveChangesAsync();
+                orderId = orders.OrderId;
             }
-            return Ok();
-        }
+
+            return StatusCode(201, new { orderId, product.ProductId });
+
+        }        
 
         // DELETE: api/Products/5
         [HttpDelete("[controller]/{id}")]

@@ -11,7 +11,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/address")]
     [ApiController]
     public class AddressesController : ControllerBase
     {
@@ -37,21 +37,60 @@ namespace WebsiteBanHang.Controllers
 
             if (address == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "Địa chỉ không tồn tại",
+                    Status = 404
+                });
             }
 
-            return Ok(address);
+            return Ok(new Response
+            {
+                Module = address,
+                Status = 200
+            });
         }
-        [HttpGet("{userId}")]
+        [HttpGet("default/{id}")]
+        public async Task<IActionResult> GetAddressDefault(Guid id)
+        {
+            var address = await _context.Address.Where(a => a.UserId == id && a.IsDefault == true)
+                .Include(a => a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).FirstOrDefaultAsync();
+            if (address == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "Người dùng không có địa chỉ nhận hàng",
+                    Status = 404
+                });
+            }
+            var address_map = _mapper.Map<AddressListViewModel>(address);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = address_map
+            });
+        }
+        [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetAddressByUserId([FromRoute] Guid userId)
         {
             var address = await _context.Address.Where(a => a.UserId == userId).Include(a=> a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).ToListAsync();
-            if (address == null)
+            if (!address.Any())
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "Người dùng không có địa chỉ nhận hàng",
+                    Status = 404
+                });
             }
             var address_map = _mapper.Map<List<AddressListViewModel>>(address);
-            return Ok(address_map);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = address_map
+            });
         }
         // PUT: api/Addresses/5
         [HttpPut("{id}")]
@@ -68,6 +107,15 @@ namespace WebsiteBanHang.Controllers
             }
 
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
+            if(addressDefault == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy địa chỉ"
+                });
+            }
             if (addressDefault.AddressId == id)
             {
                 address.IsDefault = true;
@@ -92,7 +140,12 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!AddressExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy địa chỉ"
+                    });
                 }
                 else
                 {
@@ -100,7 +153,10 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/Addresses
@@ -123,9 +179,25 @@ namespace WebsiteBanHang.Controllers
                 address.IsDefault = true;
             }
             _context.Address.Add(address);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch(DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể thêm địa chỉ"
+                });
+            }
 
-            return CreatedAtAction("GetAddressById", new { id = address.AddressId }, address);
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = address
+            });
         }
 
         // DELETE: api/Addresses/5
@@ -137,20 +209,46 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
-            if(addressDefault.AddressId == id)
+
+            if(addressDefault != null && addressDefault.AddressId == id)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể xóa địa chỉ mặc định"
+                });
             }
             var address = await _context.Address.FindAsync(id);
             if (address == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy địa chỉ để xóa"
+                });
             }
 
             _context.Address.Remove(address);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Có lỗi khi xóa"
+                });
+            }
 
-            return Ok(address);
+            return Ok(new Response
+            {
+                Status = 204                
+            });
         }
 
         private bool AddressExists(int id)

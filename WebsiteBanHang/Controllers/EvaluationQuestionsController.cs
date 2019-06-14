@@ -17,12 +17,10 @@ namespace WebsiteBanHang.Controllers
     {
         private readonly SaleDBContext _context;
         private readonly IMapper _mapper;
-
         public EvaluationQuestionsController(SaleDBContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
-
         }
 
         [HttpGet("evaluations")]

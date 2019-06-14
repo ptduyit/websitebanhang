@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WebsiteBanHang.Helpers;
+using WebsiteBanHang.Hubs;
 using WebsiteBanHang.Models;
 
 namespace WebsiteBanHang
@@ -106,12 +108,15 @@ namespace WebsiteBanHang
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddJsonOptions(
-                options => {
+                .AddJsonOptions( options => {
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                     //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.Objects;
-
-                    });
+                });
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;//off auto 400 response
+            });
+            services.AddSignalR();
 
             services.Configure<FacebookAuthSettings>(Configuration.GetSection("FacebookAuthSettings"));
             services.Configure<GoogleAuthSettings>(Configuration.GetSection("GoogleAuthSettings"));
@@ -141,6 +146,11 @@ namespace WebsiteBanHang
                     Path.Combine(Directory.GetCurrentDirectory(), "Resources")),
                 RequestPath = "/Resources"
             });
+            app.UseSignalR(routes =>
+            {
+                routes.MapHub<EchoHub>("/echo");
+            });
+            SqlDependency.Start("Server=.\\SQLEXPRESS;Database=SaleDB;Trusted_Connection=True;MultipleActiveResultSets=true");
             app.UseMvc();
             CreateRoles(serviceProvider);
         }

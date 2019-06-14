@@ -6,9 +6,11 @@ using AutoMapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using WebsiteBanHang.Helpers;
+using WebsiteBanHang.Hubs;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
 
@@ -19,15 +21,18 @@ namespace WebsiteBanHang.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
+        private static bool flag = false;
         private readonly IHostingEnvironment _environment;
         private readonly SaleDBContext _context;
         private readonly IMapper _mapper;
+        private readonly IHubContext<EchoHub> _hubContext;
 
-        public ProductsController(SaleDBContext context, IMapper mapper, IHostingEnvironment environment)
+        public ProductsController(SaleDBContext context, IMapper mapper, IHostingEnvironment environment, IHubContext<EchoHub> hubContext)
         {
             _context = context;
             _mapper = mapper;
             _environment = environment;
+            _hubContext = hubContext;
         }
 
         [HttpGet("admin/[controller]")]
@@ -105,6 +110,16 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
+            if (!flag)
+            {
+                flag = true;
+                NotifyChange n = new NotifyChange(_hubContext);
+                var listId = _context.Products.Select(p => p.ProductId).ToList();
+                listId.ForEach(i =>
+                {
+                    n.GetStock(i);
+                });
+            }
             var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).SingleOrDefaultAsync(x => x.ProductId == id);
             product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
 
@@ -122,7 +137,12 @@ namespace WebsiteBanHang.Controllers
 
             product_map.NumRate = totalStar;
             product_map.Rate = star;
-            return Ok(product_map);
+            var response = new Response
+            {
+                Module = product_map,
+                Status = 200
+            };
+            return Ok(response);
         }
         // GET: api/Products/5
 

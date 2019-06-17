@@ -12,7 +12,7 @@ namespace WebsiteBanHang.ViewModels.Mappings
         public ViewModelToEntityMappingProfile()
         {
             CreateMap<RegistrationViewModel, User>().ForMember(au => au.UserName, map => map.MapFrom(vm => vm.Email));
-            CreateMap<UserInfoViewModel, UserInfo>();
+            CreateMap<UserInfoViewModel, UserInfo>().ForPath(v => v.User.PhoneNumber, m => m.MapFrom(c => c.PhoneNumber)).ReverseMap();
 
             CreateMap<Products, ProductShowcaseViewModel>().ReverseMap();
             CreateMap<ProductCategories, ProductCategoryViewModel>();

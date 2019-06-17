@@ -20,7 +20,7 @@ namespace WebsiteBanHang.ViewModels
     public class CategoryOutputViewModel
     {
         public Paging Paging { get; set; }
-        public List<ProductCategoryViewModel> Categories { get; set; }
+        public ProductCategoryViewModel Categories { get; set; }
         public List<ProductShowcaseViewModel> Products { get; set; }
         public List<Breadcrumbs> Breadcrumbs { get; set; }
     }

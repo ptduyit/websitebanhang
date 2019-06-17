@@ -33,7 +33,20 @@ namespace WebsiteBanHang.Controllers
                 CategoryId = p.CategoryId,
                 CategoryName = p.CategoryName
             }).ToListAsync();
-            return Ok(category);
+            if (!category.Any())
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "không tìm thấy dữ liệu"
+                });
+            }
+            return Ok(new Response
+            {
+                Module = category,
+                Status = 200
+            });
         }
         [HttpGet("admin/category/select-product")]
         public async Task<IActionResult> GetCategorySelectProduct()
@@ -44,9 +57,20 @@ namespace WebsiteBanHang.Controllers
                     p.CategoryId,
                     p.CategoryName
                 }).AsNoTracking().ToListAsync();
-            if (category == null)
-                return NotFound();
-            return Ok(category);
+
+            if (!category.Any())
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "không tìm thấy dữ liệu"
+                });
+
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = category
+            });
         }
         [HttpGet("admin/category/check-url/{url}")]
         public async Task<IActionResult> CheckUrl(string url)
@@ -56,16 +80,29 @@ namespace WebsiteBanHang.Controllers
                 return Ok(new { success = true });
             return Ok(new { success = false });
         }
-        [HttpGet("category/menu")]
-        public IEnumerable<Menu> GetMenu()
+        [HttpGet("menu/category")]
+        public async Task<IActionResult> GetMenu()
         {
-            var allCategory = _context.ProductCategories.Include(p => p.CategoryChildrens).ThenInclude(d => d.CategoryChildrens).AsNoTracking().Where(p => p.ParentId == null).ToList();
+            var allCategory = await _context.ProductCategories.Include(p => p.CategoryChildrens).ThenInclude(d => d.CategoryChildrens).AsNoTracking().Where(p => p.ParentId == null).ToListAsync();
+            if (!allCategory.Any())
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "không tìm thấy dữ liệu"
+                });
+            }
             var menu = _mapper.Map<List<Menu>>(allCategory);
-            return menu;
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = menu
+            });
         }
 
-        [HttpGet("category/{url}/{pagenumber}")]
-        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromRoute] int pagenumber)
+        [HttpGet("category/{url}")]
+        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromQuery] int pagenumber, [FromQuery] string order)
         {
             int size = 1;
 
@@ -90,7 +127,12 @@ namespace WebsiteBanHang.Controllers
 
             if(ctg == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "không tìm thấy dữ liệu"
+                });
             }
 
             List<Products> pd = new List<Products>();
@@ -112,25 +154,49 @@ namespace WebsiteBanHang.Controllers
                     }
                 }
             }
-
-            var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.Url == url).ToList();
-            List<ProductCategories> categorySamelevel = new List<ProductCategories>();
-            var productCategories = _context.ProductCategories.Where(p => p.Url == url).SingleOrDefault();
-            if (productCategories.ParentId != null)
+            var category_map = new ProductCategoryViewModel();
+            if(ctg.ParentId != null)
             {
-                categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == productCategories.ParentId && p.Url != url).ToList();
+                var categoryParent = await _context.ProductCategories.Where(p => p.CategoryId == ctg.ParentId).Select(p => new ProductCategories
+                {
+                    CategoryName = p.CategoryName,
+                    Url = p.Url,
+                    CategoryId = p.CategoryId,
+                    CategoryChildrens = p.CategoryChildrens.Select(q => new ProductCategories
+                    {
+                        CategoryId = q.CategoryId,
+                        CategoryName = q.CategoryName,
+                        Url = q.Url,
+                        CategoryChildrens = q.CategoryChildrens.Where(a => a.ParentId == ctg.CategoryId).ToList()
+                    }).OrderByDescending(m => m.CategoryId == ctg.CategoryId).ToList()
+                }).FirstOrDefaultAsync();
+
+                category_map = _mapper.Map<ProductCategoryViewModel>(categoryParent);
+            }
+            else
+            {
+                var categoryNoParent = await _context.ProductCategories.Include(p => p.CategoryChildrens).SingleOrDefaultAsync(p => p.CategoryId == ctg.CategoryId);
+                category_map = _mapper.Map<ProductCategoryViewModel>(categoryNoParent);
             }
 
-            navbar.AddRange(categorySamelevel);
-            var category_map = _mapper.Map<List<ProductCategoryViewModel>>(navbar);
+            //var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.Url == url).ToList();
+            //List<ProductCategories> categorySamelevel = new List<ProductCategories>();
+            //var productCategories = _context.ProductCategories.Where(p => p.Url == url).SingleOrDefault();
+            //if (productCategories.ParentId != null)
+            //{
+            //    categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == productCategories.ParentId && p.Url != url).ToList();
+            //}
+
+            //navbar.AddRange(categorySamelevel);
+            //var category_map = _mapper.Map<List<ProductCategoryViewModel>>(navbar);
 
             List<ProductCategories> parentCategory = new List<ProductCategories>();
-            int? breadId = productCategories.CategoryId;
+            int? breadId = ctg.CategoryId;
             do
             {
-                var bread = _context.ProductCategories.Where(p => p.CategoryId == breadId).ToList();
-                breadId = bread[0].ParentId;
-                parentCategory.AddRange(bread);
+                var bread = _context.ProductCategories.Where(p => p.CategoryId == breadId).SingleOrDefault();
+                breadId = bread.ParentId;
+                parentCategory.Add(bread);
             } while (breadId != null);
             var breadcrumb = _mapper.Map<List<Breadcrumbs>>(parentCategory);
             breadcrumb.Reverse();
@@ -172,27 +238,31 @@ namespace WebsiteBanHang.Controllers
                 Categories = category_map,
                 Breadcrumbs = breadcrumb
             };
-            return Ok(outputModel);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = outputModel
+            });
         }
 
         // GET: api/ProductCategories/5
-        [HttpGet("category/{id}")]
-        public async Task<IActionResult> GetProductCategories([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //[HttpGet("category/{id}")]
+        //public async Task<IActionResult> GetProductCategories([FromRoute] int id)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            var productCategories = await _context.ProductCategories.FindAsync(id);
+        //    var productCategories = await _context.ProductCategories.FindAsync(id);
 
-            if (productCategories == null)
-            {
-                return NotFound();
-            }
+        //    if (productCategories == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return Ok(productCategories);
-        }
+        //    return Ok(productCategories);
+        //}
 
         // PUT: api/ProductCategories/5
         [HttpPut("category/{id}")]

@@ -11,7 +11,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/userinfo")]
     [ApiController]
     public class UserInfoesController : ControllerBase
     {
@@ -42,22 +42,24 @@ namespace WebsiteBanHang.Controllers
                 return BadRequest(ModelState);
             }
 
-            var userInfo = await _context.UserInfo.Include(u => u.User).Where(u => u.UserId == id)
-                .Select(u => new
-                {
-                    u.UserId,
-                    u.Gender,
-                    u.BirthDate,
-                    u.User.PhoneNumber,
-                    u.FullName
-                }).SingleOrDefaultAsync();
+            var userInfo = await _context.UserInfo.Include(u => u.User).Where(u => u.UserId == id).SingleOrDefaultAsync();
 
             if (userInfo == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy thông tin người dùng"
+                });
             }
-
-            return Ok(userInfo);
+            var userInfo_map = _mapper.Map<UserInfoViewModel>(userInfo);
+            
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = userInfo_map
+            });
         }
 
         // PUT: api/UserInfoes/5
@@ -66,18 +68,36 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "dữ liệu đầu vào sai",
+                    Status = 400
+                });
             }
             if (id != userInfo.UserId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "dữ liệu đầu vào sai",
+                    Status = 400
+                });
             }
-            if (userInfo.BirthDate != null)
+            if (userInfo.BirthDate == null)
             {
-                TimeSpan time = new TimeSpan(7, 0, 0);
-                userInfo.BirthDate = userInfo.BirthDate.Add(time);
+                userInfo.BirthDate = DateTime.Now;
             }
             User user = await _context.User.FindAsync(id);
+            if (user == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Message = "dữ liệu chỉnh sửa không tồn tại",
+                    Status = 404
+                });
+            }
             user.PhoneNumber = userInfo.PhoneNumber;
             UserInfo info = _mapper.Map<UserInfo>(userInfo);
             _context.Entry(user).State = EntityState.Modified;
@@ -91,15 +111,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!UserInfoExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Message = "dữ liệu chỉnh sửa không tồn tại",
+                        Status = 404
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Message = "có lỗi khi chỉnh sửa",
+                        Status = 409
+                    });
                     throw;
                 }
             }
 
-            return Ok();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/UserInfoes

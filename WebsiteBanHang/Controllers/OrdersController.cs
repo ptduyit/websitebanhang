@@ -341,9 +341,8 @@ namespace WebsiteBanHang.Controllers
         public bool Equals(CartOrderViewModel x, CartOrderViewModel y)
         {
             if (ReferenceEquals(x, y)) return true;
-            if (ReferenceEquals(x, null)) return false;
-            if (ReferenceEquals(x, null)) return false;
-            if (ReferenceEquals(y, null)) return false;
+            if (x == null) return false;
+            if (y == null) return false;
             if (x.GetType() != y.GetType()) return false;
             return Equals(x.UserId, y.UserId) && x.UnitPrice == y.UnitPrice && x.Quantity == y.Quantity
                 && x.ProductId == y.ProductId && x.Discontinued == y.Discontinued;

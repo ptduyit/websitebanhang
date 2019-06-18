@@ -26,11 +26,16 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("evaluations")]
         public async Task<IActionResult> GetEvaluation([FromQuery] int productid, [FromQuery] int pagenumber)
         {
-            int size = 3;
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
+            int size = 3;
 
             var evaluations = await _context.EvaluationQuestions.Include(e => e.User)
                 .Include(e => e.Comments).ThenInclude(c => c.User)
@@ -39,7 +44,12 @@ namespace WebsiteBanHang.Controllers
             
             if (evaluations == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             var eval_map = _mapper.Map<List<EvaluationQuestionsViewModel>>(evaluations);
 
@@ -69,24 +79,37 @@ namespace WebsiteBanHang.Controllers
                 Rating = new Rating(star, totalStar, starList),
                 Evaluations = eval
             };
-            return Ok(output);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
         }
 
         [HttpGet("{productid}/{pagenumber}")]
         public async Task<IActionResult> GetEQuestions([FromRoute] int productid, [FromRoute] int pagenumber)
         {
-            int size = 1;
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
+            int size = 1;
 
             var evaluationQuestions = await _context.EvaluationQuestions.Include(e => e.User).Include(e => e.Comments).ThenInclude(c => c.User).Where(e => e.ProductId == productid && e.Rate == null).ToListAsync();
 
-
             if (evaluationQuestions == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             var question_map = _mapper.Map<List<EvaluationQuestionsViewModel>>(evaluationQuestions);
             var question = question_map.Skip(size * (pagenumber - 1)).Take(size).ToList();
@@ -97,7 +120,11 @@ namespace WebsiteBanHang.Controllers
                 Paging = new Paging(totalQuestion, pagenumber, size, totalPages),
                 Questions = question
             };
-            return Ok(output);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
         }
 
         // PUT: api/EvaluationQuestions/5
@@ -106,12 +133,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != evaluationQuestions.EvaluationId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(evaluationQuestions).State = EntityState.Modified;
@@ -124,7 +161,12 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!EvaluationQuestionsExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
@@ -132,7 +174,10 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/EvaluationQuestions
@@ -141,13 +186,33 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             evaluation.Date = DateTime.Now;
             _context.EvaluationQuestions.Add(evaluation);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể lưu"
+                });
+            }
 
-            return StatusCode(201);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // DELETE: api/EvaluationQuestions/5
@@ -156,34 +221,87 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var evaluationQuestions = await _context.EvaluationQuestions.FindAsync(id);
             if (evaluationQuestions == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.EvaluationQuestions.Remove(evaluationQuestions);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể lưu"
+                });
+            }
 
-            return Ok(evaluationQuestions);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = evaluationQuestions
+            });
         }
         [HttpGet("comments/{id}")]
         public async Task<IActionResult> GetComments(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var comment = await _context.Comments.Include(p => p.User).Where(p => p.CommentId == id).SingleOrDefaultAsync();
             if (comment == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             var comment_map = _mapper.Map<CommentsViewModel>(comment);
-            return Ok(comment_map);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = comment_map
+            });
         }
         [HttpPost("comments")]
         public async Task<IActionResult> PostComment(Comments comments)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             comments.Date = DateTime.Now;
             _context.Comments.Add(comments);
             try
@@ -192,12 +310,30 @@ namespace WebsiteBanHang.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể lưu"
+                });
             }
             var comment = await _context.Comments.Include(p => p.User).Where(p => p.CommentId == comments.CommentId).SingleOrDefaultAsync();
+            if(comment == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
+            }
             var comment_map = _mapper.Map<CommentsViewModel>(comment);
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = comment_map
+            });
 
-            return CreatedAtAction("GetComments", new { id = comments.CommentId },comment_map);
         }
         private bool EvaluationQuestionsExists(int id)
         {

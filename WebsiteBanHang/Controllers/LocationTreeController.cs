@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -20,31 +21,54 @@ namespace WebsiteBanHang.Controllers
         }
         // GET: api/LocationTree
         [HttpGet]
-        public IEnumerable<Provinces> Provinces()
+        public async Task<IActionResult> Provinces()
         {
-            return _context.Provinces.OrderBy(p => p.Name);
+            var provinces = await _context.Provinces.OrderBy(p => p.Name).ToListAsync();
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = provinces
+            });
         }
 
         // GET: api/LocationTree/5
         [HttpGet("{id}/district")]
         public async Task<IActionResult> GetDistricts(int id)
         {
-            var districts = await _context.Districts.Where(d => d.ProvinceId == id).OrderBy(d => d.Name).ToListAsync();
-            if(districts == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
-            return Ok(districts);
+            var districts = await _context.Districts.Where(d => d.ProvinceId == id).OrderBy(d => d.Name).ToListAsync();
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = districts
+            });
         }
         [HttpGet("district/{id}/ward")]
         public async Task<IActionResult> GetWard(int id)
         {
-            var wards = await _context.Wards.Where(d => d.DistrictId == id).OrderBy(d => d.Name).ToListAsync();
-            if (wards == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
-            return Ok(wards);
+            var wards = await _context.Wards.Where(d => d.DistrictId == id).OrderBy(d => d.Name).ToListAsync();
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = wards
+            });
         }
     }
 }

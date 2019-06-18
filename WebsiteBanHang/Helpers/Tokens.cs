@@ -13,7 +13,7 @@ namespace WebsiteBanHang.Helpers
 {
     public class Tokens
     {
-        public static async Task<string> GenerateJwt(User user, string fullName, JwtIssuerOptions _jwtOptions, UserManager<User> _userManager)
+        public static async Task<JsonResponse> GenerateJwt(User user, string fullName, JwtIssuerOptions _jwtOptions, UserManager<User> _userManager)
         {
             var claims = new List<Claim>
             {
@@ -37,19 +37,26 @@ namespace WebsiteBanHang.Helpers
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
-            var response = new
+            var response = new JsonResponse
             {
-                fullName,
+                fullName = fullName,
                 id = user.Id,
                 token = encodedJwt,
                 expires_in = (int)_jwtOptions.ValidFor.TotalSeconds
             };
-
-            return JsonConvert.SerializeObject(response, new JsonSerializerSettings { Formatting = Formatting.Indented });
+            return response;
+            //return JsonConvert.SerializeObject(response, new JsonSerializerSettings { Formatting = Formatting.Indented });
         }
         private static long ToUnixEpochDate(DateTime date)
           => (long)Math.Round((date.ToUniversalTime() -
                                new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero))
                               .TotalSeconds);
+    }
+    public class JsonResponse
+    {
+        public string fullName { get; set; }
+        public Guid id { get; set; }
+        public string token { get; set; }
+        public int expires_in { get; set; }
     }
 }

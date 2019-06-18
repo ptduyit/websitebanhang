@@ -30,7 +30,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var address = await _context.Address.Where(a => a.AddressId == id).Include(a => a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).SingleOrDefaultAsync();
@@ -54,6 +59,15 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("default/{id}")]
         public async Task<IActionResult> GetAddressDefault(Guid id)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var address = await _context.Address.Where(a => a.UserId == id && a.IsDefault == true)
                 .Include(a => a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).FirstOrDefaultAsync();
             if (address == null)
@@ -75,6 +89,15 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetAddressByUserId([FromRoute] Guid userId)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var address = await _context.Address.Where(a => a.UserId == userId).Include(a=> a.Wards).ThenInclude(d => d.Districts).ThenInclude(p => p.Provinces).ToListAsync();
             if (!address.Any())
             {
@@ -98,12 +121,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != address.AddressId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
@@ -165,7 +198,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
@@ -206,7 +244,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
 

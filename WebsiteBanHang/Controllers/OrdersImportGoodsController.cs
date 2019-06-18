@@ -37,7 +37,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var ordersImportGoods = await _context.OrdersImportGoods.Include(o => o.User).Include(o => o.Supplier).Include(o => o.OrderImportGoodsDetails)
@@ -45,11 +50,20 @@ namespace WebsiteBanHang.Controllers
 
             if (ordersImportGoods == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             var order_map = _mapper.Map<OrderImportViewModel>(ordersImportGoods);
 
-            return Ok(order_map);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = order_map
+            });
         }
 
         // PUT: api/OrdersImportGoods/5
@@ -58,12 +72,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != ordersView.OrderId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var orders = await _context.OrdersImportGoods.FindAsync(id);
             orders.SupplierId = ordersView.SupplierId;
@@ -89,27 +113,51 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!OrdersImportGoodsExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
         [HttpPut("order-import/{id}/temp")]
         public async Task<IActionResult> TempOrdersImportGoods([FromRoute] int id, [FromBody] OrderImportUpdateViewModel ordersView)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != ordersView.OrderId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var orders = await _context.OrdersImportGoods.FindAsync(id);
             orders.SupplierId = ordersView.SupplierId;
@@ -130,20 +178,43 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!OrdersImportGoodsExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
         // POST: api/OrdersImportGoods
         [HttpPost("order-import")]
         public async Task<IActionResult> CreateOrdersImportGoods([FromBody] OrderImportFirstViewModel order)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             OrdersImportGoods orders = new OrdersImportGoods
             {
                 OrderDate = DateTime.Now,
@@ -159,13 +230,38 @@ namespace WebsiteBanHang.Controllers
             });
             
             _context.OrdersImportGoods.Add(orders);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "không thể lưu dữ liệu"
+                });
+            }
             
-            return CreatedAtAction("GetOrdersImportGoods", new { id = orders.OrderId });
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = orders.OrderId
+            });
         }
         [HttpPost("orderdetail-import")]
         public async Task<IActionResult> CreateOrderDetail([FromBody] OrderImportDetailsViewModel detail )
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             OrderImportGoodsDetails orderdetail = new OrderImportGoodsDetails
             {
                 OrderId = detail.OrderId,
@@ -175,7 +271,10 @@ namespace WebsiteBanHang.Controllers
             };
             _context.OrderImportGoodsDetails.Add(orderdetail);
             await _context.SaveChangesAsync();
-            return StatusCode(201);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // DELETE: api/OrdersImportGoods/5
@@ -184,31 +283,62 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var ordersImportGoods = await _context.OrdersImportGoods.FindAsync(id);
             if (ordersImportGoods == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.OrdersImportGoods.Remove(ordersImportGoods);
             await _context.SaveChangesAsync();
+            return Ok(new Response
+            {
+                Status = 204
+            });
 
-            return Ok(ordersImportGoods);
         }
         [HttpDelete("order-import-detail/oid/{oid}/pid/{pid}")]
         public async Task<IActionResult> DeleteOrderDetai([FromRoute] int oid, [FromRoute] int pid)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var orderDetail = await _context.OrderImportGoodsDetails.Where(p => p.OrderId == oid && p.ProductId == pid).FirstOrDefaultAsync();
             if(orderDetail == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             _context.OrderImportGoodsDetails.Remove(orderDetail);
             await _context.SaveChangesAsync();
-            return Ok();
+
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
         
         private bool OrdersImportGoodsExists(int id)

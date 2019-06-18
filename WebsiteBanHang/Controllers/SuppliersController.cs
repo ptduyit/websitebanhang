@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -33,21 +34,44 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var suppliers = await _context.Suppliers.FindAsync(id);
 
             if (suppliers == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = suppliers
+            });
 
-            return Ok(suppliers);
         }
         [HttpGet("search/{keyword}")]
         public async Task<IActionResult> SearchSupplier([FromRoute] string keyword)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var searchString = keyword.Split(' ');
             searchString = searchString.Select(x => x.ToLower()).ToArray();
             var rs = await _context.Suppliers.Where(p => searchString.All(s => p.CompanyName.ToLower().Contains(s))).Select(x => new
@@ -63,12 +87,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != suppliers.SupplierId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(suppliers).State = EntityState.Modified;
@@ -81,7 +115,12 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!SuppliersExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
@@ -89,7 +128,10 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/Suppliers
@@ -98,13 +140,21 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Suppliers.Add(suppliers);
             await _context.SaveChangesAsync();
-
-            return StatusCode(201,new { id = suppliers.SupplierId , name = suppliers.CompanyName});
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = new { id = suppliers.SupplierId, name = suppliers.CompanyName }
+            });
         }
 
         // DELETE: api/Suppliers/5
@@ -113,19 +163,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var suppliers = await _context.Suppliers.FindAsync(id);
             if (suppliers == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.Suppliers.Remove(suppliers);
             await _context.SaveChangesAsync();
 
-            return Ok(suppliers);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool SuppliersExists(int id)

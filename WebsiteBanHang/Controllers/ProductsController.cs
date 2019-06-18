@@ -44,13 +44,27 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("admin/[controller]/{id}")]
         public async Task<IActionResult> GetProductById([FromRoute] int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var products = await _context.Products.Include(p => p.ProductImages).Include(p => p.OrderImportGoodsDetails)
                 .Where(p => p.ProductId == id).FirstOrDefaultAsync();
             products.ProductImages = products.ProductImages.Where(p => p.IsThumbnail == true).ToList();
 
             if (products == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             var price = products.OrderImportGoodsDetails.OrderByDescending(x => x.OrderId).Take(1).FirstOrDefault();
 
@@ -60,13 +74,25 @@ namespace WebsiteBanHang.Controllers
                 PriceImport = price.UnitPrice
             };
 
-            return Ok(result);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = result
+            });
         }
 
         [HttpGet("admin/[controller]/search/{keyword}")]
         public async Task<IActionResult> Recommend([FromRoute] string keyword)
         {
-            
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             if (Int32.TryParse(keyword, out int id))
             {
                 var results = await _context.Products.Where(x => x.ProductId == id).Select(x => new
@@ -104,12 +130,34 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStockProduct([FromRoute] int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var stock = await _context.Products.Where(p => p.ProductId == id).Select(i => new { i.Stock }).SingleOrDefaultAsync();
-            return Ok(stock);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = stock
+            });
         }
         [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             if (!flag)
             {
                 flag = true;
@@ -137,12 +185,12 @@ namespace WebsiteBanHang.Controllers
 
             product_map.NumRate = totalStar;
             product_map.Rate = star;
-            var response = new Response
+            return Ok(new Response
             {
                 Module = product_map,
                 Status = 200
-            };
-            return Ok(response);
+            });
+
         }
         // GET: api/Products/5
 
@@ -152,7 +200,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var products = await _context.Products.Where(p => name == null || p.ProductName.StartsWith(name) || p.ProductName.EndsWith(name) || p.ProductName.Contains(name)).Take(10).Select(i => new ProductSearchViewModel
@@ -171,7 +224,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             Products products = JsonConvert.DeserializeObject<Products>(product);
@@ -179,7 +237,12 @@ namespace WebsiteBanHang.Controllers
 
             if (id != products.ProductId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             
             _context.Entry(products).State = EntityState.Modified; //modify product
@@ -214,15 +277,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!ProductsExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
         [HttpPost("admin/[controller]/quick-add")]
         public async Task<IActionResult> QuickAddProduct(QuickAddProductViewModel productAdd)
@@ -275,7 +352,11 @@ namespace WebsiteBanHang.Controllers
                 await _context.SaveChangesAsync();
                 orderId = orders.OrderId;
             }
-
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = new { orderId, product.ProductId }
+            });
             return StatusCode(201, new { orderId, product.ProductId });
 
         }        
@@ -286,19 +367,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var products = await _context.Products.FindAsync(id);
             if (products == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.Products.Remove(products);
             await _context.SaveChangesAsync();
 
-            return Ok(products);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool ProductsExists(int id)

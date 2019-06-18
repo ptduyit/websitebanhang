@@ -48,7 +48,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var user = await _context.User.FindAsync(id);
@@ -58,7 +63,11 @@ namespace WebsiteBanHang.Controllers
                 return NotFound();
             }
 
-            return Ok(user);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = user
+            });
         }
 
         // PUT: api/Users/5
@@ -67,12 +76,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != user.Id)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(user).State = EntityState.Modified;
@@ -85,15 +104,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!UserExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Sai dữ liệu đầu vào"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/Users
@@ -102,7 +135,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var userIdentity = _mapper.Map<User>(model);
             var result = await _userManager.CreateAsync(userIdentity, model.Password);
@@ -115,8 +153,12 @@ namespace WebsiteBanHang.Controllers
 
             var jwt = await Tokens.GenerateJwt(userIdentity, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
 
-            return new OkObjectResult(jwt);
-            
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = jwt
+            });
+
         }
 
         // DELETE: api/Users/5
@@ -125,19 +167,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var user = await _context.User.FindAsync(id);
             if (user == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.User.Remove(user);
             await _context.SaveChangesAsync();
 
-            return Ok(user);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool UserExists(Guid id)

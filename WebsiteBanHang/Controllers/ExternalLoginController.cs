@@ -38,13 +38,27 @@ namespace WebsiteBanHang.Controllers
         [HttpPost("{platform}")]
         public async Task<IActionResult> Post([FromBody]AccessTokenViewModel model, [FromRoute] string platform)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             if (platform == "google")
             {
                 var userInfoResponse = await Client.GetStringAsync($"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={model.AccessToken}");
                 var userInfo = JsonConvert.DeserializeObject<UserData>(userInfoResponse);
                 if (!string.Equals(userInfo.ClientId, _ggAuthSettings.ClientId))
                 {
-                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid google token.", ModelState));
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Đăng nhập thất bại"
+                    });
                 }
                 var user = await _userManager.FindByEmailAsync(userInfo.Email);
 
@@ -58,7 +72,13 @@ namespace WebsiteBanHang.Controllers
 
                     var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));
 
-                    if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
+                    if (!result.Succeeded)
+                        return Ok(new Response
+                        {
+                            IsError = true,
+                            Status = 409,
+                            Message = "Lỗi khi thêm tài khoản"
+                        });
 
                     await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
                     await _appDbContext.SaveChangesAsync();
@@ -70,13 +90,22 @@ namespace WebsiteBanHang.Controllers
 
                 if (localUser == null)
                 {
-                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Failed to create local user account.", ModelState));
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "lỗi khi thêm tài khoản"
+                    });
                 }
                 var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
 
                 var jwt = await Tokens.GenerateJwt(localUser, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
 
-                return new OkObjectResult(jwt);
+                return Ok(new Response
+                {
+                    Status = 200,
+                    Module = jwt
+                });
             }
             else if (platform == "facebook")
             {
@@ -89,7 +118,13 @@ namespace WebsiteBanHang.Controllers
 
                 if (!userAccessTokenValidation.Data.IsValid)
                 {
-                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid facebook token.", ModelState));
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 400,
+                        Message = "Invalid facebook token"
+                    });
+                    
                 }
 
                 // 3. we've got a valid token so we can request user data from fb
@@ -107,7 +142,13 @@ namespace WebsiteBanHang.Controllers
 
                     var result = await _userManager.CreateAsync(appUser, Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 8));
 
-                    if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
+                    if (!result.Succeeded)
+                        return Ok(new Response
+                        {
+                            IsError = true,
+                            Status = 409,
+                            Message = "lỗi khi thêm tài khoản"
+                        });
 
                     await _appDbContext.UserInfo.AddAsync(new UserInfo { UserId = appUser.Id, FullName = userInfo.Name, BirthDate = DateTime.Now });
                     await _appDbContext.SaveChangesAsync();
@@ -119,15 +160,30 @@ namespace WebsiteBanHang.Controllers
 
                 if (localUser == null)
                 {
-                    return BadRequest(Errors.AddErrorToModelState("login_failure", "Failed to create local user account.", ModelState));
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "lỗi khi thêm tài khoản"
+                    });
+                    
                 }
                 var localUserInfo = await _appDbContext.UserInfo.FindAsync(localUser.Id);
 
                 var jwt = await Tokens.GenerateJwt(localUser, localUserInfo?.FullName ?? "noname", _jwtOptions, _userManager);
 
-                return new OkObjectResult(jwt);
+                return Ok(new Response
+                {
+                    Status = 200,
+                    Module = jwt
+                });
             }
-            return BadRequest(ModelState);
+            return Ok(new Response
+            {
+                IsError = true,
+                Status = 400,
+                Message = "chỉ hỗ trợ google facebook"
+            });
         }
     }
 }

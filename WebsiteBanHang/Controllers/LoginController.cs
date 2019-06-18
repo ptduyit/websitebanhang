@@ -38,16 +38,30 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var user = await _userManager.FindByNameAsync(credentials.UserName);
             if (user == null)
             {
-                return BadRequest(Errors.AddErrorToModelState("login_failure", "Invalid username or password.", ModelState));
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Tài khoản hoặc mật khẩu không tồn tại"
+                });
             }
             var userInfo = await _context.UserInfo.FindAsync(user.Id);
             var jwt = await Tokens.GenerateJwt(user, userInfo.FullName, _jwtOptions,_userManager);
-            return new OkObjectResult(jwt);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = jwt
+            });
         }
 
     }

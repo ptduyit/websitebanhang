@@ -75,10 +75,25 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("admin/category/check-url/{url}")]
         public async Task<IActionResult> CheckUrl(string url)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var category = await _context.ProductCategories.Where(p => p.Url == url).FirstOrDefaultAsync();
             if (category == null)
-                return Ok(new { success = true });
-            return Ok(new { success = false });
+                return Ok(new Response
+                {
+                    Status = 204
+                });
+            return Ok(new Response
+            {
+                Status = 400
+            });
         }
         [HttpGet("menu/category")]
         public async Task<IActionResult> GetMenu()
@@ -102,10 +117,18 @@ namespace WebsiteBanHang.Controllers
         }
 
         [HttpGet("category/{url}")]
-        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromQuery] int pagenumber, [FromQuery] string order)
+        public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromQuery] int page, [FromQuery] string order)
         {
-            int size = 1;
-
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            int size = 10;
 
             var ctg = await _context.ProductCategories.Include(p => p.Products).ThenInclude(i => i.ProductImages)
                 .Include(p => p.CategoryChildrens)
@@ -175,20 +198,9 @@ namespace WebsiteBanHang.Controllers
             }
             else
             {
-                var categoryNoParent = await _context.ProductCategories.Include(p => p.CategoryChildrens).SingleOrDefaultAsync(p => p.CategoryId == ctg.CategoryId);
+                var categoryNoParent = await _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().SingleOrDefaultAsync(p => p.CategoryId == ctg.CategoryId);
                 category_map = _mapper.Map<ProductCategoryViewModel>(categoryNoParent);
             }
-
-            //var navbar = _context.ProductCategories.Include(p => p.CategoryChildrens).AsNoTracking().Where(p => p.Url == url).ToList();
-            //List<ProductCategories> categorySamelevel = new List<ProductCategories>();
-            //var productCategories = _context.ProductCategories.Where(p => p.Url == url).SingleOrDefault();
-            //if (productCategories.ParentId != null)
-            //{
-            //    categorySamelevel = _context.ProductCategories.AsNoTracking().Where(p => p.ParentId == productCategories.ParentId && p.Url != url).ToList();
-            //}
-
-            //navbar.AddRange(categorySamelevel);
-            //var category_map = _mapper.Map<List<ProductCategoryViewModel>>(navbar);
 
             List<ProductCategories> parentCategory = new List<ProductCategories>();
             int? breadId = ctg.CategoryId;
@@ -228,12 +240,29 @@ namespace WebsiteBanHang.Controllers
                     });
                 } 
             }
-            var product = productShowcase.Skip(size * (pagenumber - 1)).Take(size).ToList();
+            switch (order)
+            {
+                case "newest":
+                    productShowcase = productShowcase.OrderByDescending(p => p.ProductId).ToList();
+                    break;
+                case "discount":
+                    productShowcase = productShowcase.OrderByDescending(p => p.Discount).ToList();
+                    break;
+                case "priceasc":
+                    productShowcase = productShowcase.OrderBy(p => p.UnitPrice).ToList();
+                    break;
+                case "pricedesc":
+                    productShowcase = productShowcase.OrderByDescending(p => p.UnitPrice).ToList();
+                    break;
+            }
             int totalProducts = productShowcase.Count();
             int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product = productShowcase.Skip(size * (page - 1)).Take(size).ToList();
+            
             var outputModel = new CategoryOutputViewModel
             {
-                Paging = new Paging(totalProducts, pagenumber, size, totalPages),
+                Paging = new Paging(totalProducts, page, size, totalPages),
                 Products = product,
                 Categories = category_map,
                 Breadcrumbs = breadcrumb
@@ -270,12 +299,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != productCategories.CategoryId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(productCategories).State = EntityState.Modified;
@@ -288,15 +327,28 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!ProductCategoriesExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
-
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/ProductCategories
@@ -305,12 +357,21 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.ProductCategories.Add(productCategories);
             await _context.SaveChangesAsync();
-
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = productCategories.CategoryId
+            });
             return StatusCode(201, new { id = productCategories.CategoryId });
         }
 
@@ -320,19 +381,31 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var productCategories = await _context.ProductCategories.FindAsync(id);
             if (productCategories == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.ProductCategories.Remove(productCategories);
             await _context.SaveChangesAsync();
-
-            return Ok(productCategories);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool ProductCategoriesExists(int id)

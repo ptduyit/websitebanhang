@@ -39,7 +39,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var userInfo = await _context.UserInfo.Include(u => u.User).Where(u => u.UserId == id).SingleOrDefaultAsync();
@@ -142,7 +147,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.UserInfo.Add(userInfo);
@@ -154,15 +164,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (UserInfoExists(userInfo.UserId))
                 {
-                    return new StatusCodeResult(StatusCodes.Status409Conflict);
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Sai dữ liệu đầu vào"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
-
-            return CreatedAtAction("GetUserInfo", new { id = userInfo.UserId }, userInfo);
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = userInfo
+            });
         }
 
         // DELETE: api/UserInfoes/5
@@ -171,19 +195,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var userInfo = await _context.UserInfo.FindAsync(id);
             if (userInfo == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.UserInfo.Remove(userInfo);
             await _context.SaveChangesAsync();
 
-            return Ok(userInfo);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool UserInfoExists(Guid id)

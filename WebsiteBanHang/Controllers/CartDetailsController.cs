@@ -58,6 +58,15 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("cart/{userId}/quantity")]
         public async Task<IActionResult> GetTotalQuantity(Guid userId)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var item = await _context.CartDetails.Where(e => e.UserId == userId).Select(e => e.Quantity).ToListAsync();
             int total = 0;
             item.ForEach(e =>
@@ -74,6 +83,15 @@ namespace WebsiteBanHang.Controllers
         [HttpPatch("cart/{userId}/{productId}")]
         public async Task<IActionResult> UpdateStock([FromRoute] Guid userId, [FromRoute] int productId, [FromBody] JsonPatchDocument<CartDetails> cart)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
             var cartdetail = await _context.CartDetails.Where(e => e.ProductId == productId && e.UserId == userId).SingleOrDefaultAsync();
             if(cartdetail == null)
             {
@@ -120,7 +138,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             Task<int> t = GetStock(cartDetails.ProductId);
             await t;
@@ -213,7 +236,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var cartDetails = await _context.CartDetails.Where(e => e.ProductId == productId && e.UserId == userId).SingleOrDefaultAsync();
@@ -240,7 +268,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var cartDetails = await _context.CartDetails.Where(e => e.UserId == userId).ToListAsync();

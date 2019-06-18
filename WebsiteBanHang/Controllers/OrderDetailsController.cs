@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
+using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
@@ -31,14 +32,28 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             var exits = await _context.OrderDetails.FirstOrDefaultAsync(e => e.OrderId == orderId && e.ProductId == productId);
             if (exits == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
-            return StatusCode(200);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = exits
+            });
         }
         // GET: api/OrderDetails/5
         [HttpGet("{orderId}/{productId}")]
@@ -46,17 +61,31 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orderDetails = await _context.OrderDetails.FirstOrDefaultAsync(e => e.OrderId == orderId && e.ProductId == productId);
 
             if (orderDetails == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
-            return Ok(orderDetails);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = orderDetails
+            });
         }
 
         [HttpGet("{orderId}")]
@@ -64,17 +93,31 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orderDetails = await _context.OrderDetails.Where(e => e.OrderId == orderId).ToListAsync();
 
             if (orderDetails == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
-            return Ok(orderDetails);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = orderDetails
+            });
         }
         // PUT: api/OrderDetails/5
         [HttpPut("{orderId}/{productId}")]
@@ -82,12 +125,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (orderId != orderDetails.OrderId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(orderDetails).State = EntityState.Modified;
@@ -100,15 +153,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!OrderDetailsExists(orderId, productId))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 400,
+                        Message = "Sai dữ liệu đầu vào"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // POST: api/OrderDetails
@@ -117,7 +184,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
             if (OrderDetailsExists(orderDetails.OrderId, orderDetails.ProductId))
             {
@@ -140,15 +212,23 @@ namespace WebsiteBanHang.Controllers
             {
                 if (OrderDetailsExists(orderDetails.OrderId,orderDetails.ProductId))
                 {
-                    return new StatusCodeResult(StatusCodes.Status409Conflict);
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 409,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                 }
                 else
                 {
                     throw;
                 }
             }
-
-            return CreatedAtAction("GetOrderDetails", new { id = orderDetails.OrderId }, orderDetails);
+            return Ok(new Response
+            {
+                Status = 201,
+                Module = orderDetails
+            });
         }
 
         // DELETE: api/OrderDetails/5
@@ -157,19 +237,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orderDetails = await _context.OrderDetails.FirstOrDefaultAsync(e => e.OrderId == orderId && e.ProductId == productId);
             if (orderDetails == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.OrderDetails.Remove(orderDetails);
             await _context.SaveChangesAsync();
 
-            return Ok(orderDetails);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool OrderDetailsExists(int orderId, int? productId)

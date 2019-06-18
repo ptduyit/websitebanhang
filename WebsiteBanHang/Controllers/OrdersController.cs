@@ -41,7 +41,12 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             Orders orders = _context.Orders.Where(o => o.OrderId == id).SingleOrDefault();
@@ -56,7 +61,12 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!OrdersExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
@@ -64,7 +74,10 @@ namespace WebsiteBanHang.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         // GET: api/Orders/5
@@ -73,36 +86,63 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orders = await _context.Orders.FindAsync(id);
 
             if (orders == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
-
-            return Ok(orders);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = orders
+            });
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderByIdUser([FromRoute] Guid id)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orders = await _context.Orders.Select(o => o).Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.UserId == id).OrderByDescending(d => d.OrderDate).ToListAsync();
 
-            if (orders == null)
+            if (!orders.Any())
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
             //orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
 
-            return Ok(orders);
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = orders
+            });
         }
         // PUT: api/Orders/5
         [HttpPut("{id}")]
@@ -110,12 +150,22 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             if (id != orders.OrderId)
             {
-                return BadRequest();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             _context.Entry(orders).State = EntityState.Modified;
@@ -128,15 +178,29 @@ namespace WebsiteBanHang.Controllers
             {
                 if (!OrdersExists(id))
                 {
-                    return NotFound();
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
                 }
                 else
                 {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 400,
+                        Message = "Không thể lưu dữ liệu"
+                    });
                     throw;
                 }
             }
 
-            return NoContent();
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
         public bool ListEquals(List<CartOrderViewModel> list1, List<CartOrderViewModel> list2)
         {
@@ -315,19 +379,32 @@ namespace WebsiteBanHang.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
             }
 
             var orders = await _context.Orders.FindAsync(id);
             if (orders == null)
             {
-                return NotFound();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Không tìm thấy dữ liệu"
+                });
             }
 
             _context.Orders.Remove(orders);
             await _context.SaveChangesAsync();
 
-            return Ok(orders);
+            return Ok(new Response
+            {
+                Status = 204
+            });
         }
 
         private bool OrdersExists(int id)

@@ -20,4 +20,9 @@ namespace WebsiteBanHang.ViewModels
         public string Password { get; set; }
         public string PhoneNumber { get; set; }
     }
+    public class Password
+    {
+        public string PassOld { get; set; }
+        public string PassNew { get; set; }
+    }
 }

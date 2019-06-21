@@ -140,15 +140,10 @@ namespace WebsiteBanHang.Controllers
             }
 
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
-            if(addressDefault == null)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 404,
-                    Message = "Không tìm thấy địa chỉ"
-                });
-            }
+            //if(addressDefault == null)
+            //{
+                
+            //}
             if (addressDefault.AddressId == id)
             {
                 address.IsDefault = true;
@@ -207,7 +202,7 @@ namespace WebsiteBanHang.Controllers
             }
 
             var addressDefault = await _context.Address.Where(a => a.IsDefault == true && a.UserId == address.UserId).SingleOrDefaultAsync();
-            if(address.IsDefault == true && addressDefault != null)
+            if(addressDefault != null && address.IsDefault == true)
             {
                 addressDefault.IsDefault = false;
                 _context.Entry(addressDefault).State = EntityState.Modified;
@@ -251,17 +246,6 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            var addressDefault = await _context.Address.Where(a => a.IsDefault == true).SingleOrDefaultAsync();
-
-            if(addressDefault != null && addressDefault.AddressId == id)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 409,
-                    Message = "Không thể xóa địa chỉ mặc định"
-                });
-            }
             var address = await _context.Address.FindAsync(id);
             if (address == null)
             {
@@ -272,7 +256,16 @@ namespace WebsiteBanHang.Controllers
                     Message = "Không tìm thấy địa chỉ để xóa"
                 });
             }
-
+            if (address.IsDefault)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể xóa địa chỉ mặc định"
+                });
+            }
+      
             _context.Address.Remove(address);
             try
             {

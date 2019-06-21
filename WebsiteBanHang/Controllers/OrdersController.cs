@@ -12,7 +12,7 @@ using WebsiteBanHang.ViewModels;
 
 namespace WebsiteBanHang.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class OrdersController : ControllerBase
     {
@@ -36,7 +36,7 @@ namespace WebsiteBanHang.Controllers
         {
             return _context.Orders.Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.Status == status).ToList();
         }
-        [HttpGet("{id}/{status}")]
+        [HttpGet("orders/update/{id}/{status}")]
         public async Task<IActionResult> PutConfirmOrders([FromRoute] int id, [FromRoute] int status)
         {
             if (!ModelState.IsValid)
@@ -144,6 +144,117 @@ namespace WebsiteBanHang.Controllers
                 Module = orders
             });
         }
+        [HttpGet("admin/orders/check-history/{id}")]
+        public async Task<IActionResult> CheckHistotryOrder(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var order = await _context.Orders.Where(p => p.UserId == id).ToListAsync();
+            int success = order.Where(p => p.Status == Globals.DA_GIAO).Count();
+            int fail = order.Where(p => p.Status == Globals.KHACH_HUY).Count();
+            int totalOrder = success + fail;
+            int percent = 0;
+            if(totalOrder > 0)
+            {
+                percent = (success / totalOrder)*100;
+            }
+
+            var rate = await _context.EvaluationQuestions.Where(p => p.UserId == id && p.Rate != null).ToListAsync();
+            float star = 0;
+            int[] starList = new int[5];
+            for (int i = 1; i <= 5; i++)
+            {
+                int temp = rate.Where(e => e.Rate == i).Count();
+                starList[i - 1] = temp;
+                star += i * temp;
+            }
+            int totalStar = rate.Count();
+            if (totalStar > 0)
+                star = (float)Math.Round((double)star / totalStar, 1);
+            else star = 0;
+            var output = new HistoryBuy
+            {
+                Percent = percent,
+                Rate = star,
+                TotalOrder = totalOrder,
+                TotalStar = totalStar
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
+
+        }
+
+        [HttpGet("admin/orders")]
+        public async Task<IActionResult> GetOrderByStatus([FromQuery] int status, [FromQuery] int page,[FromQuery] int id,[FromQuery] int size,[FromQuery] string sort)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var order = await _context.Orders.Include(p => p.OrderDetails).ThenInclude(od => od.Product).ThenInclude(pr => pr.ProductImages)
+                .Include(p => p.Wards).ThenInclude(w => w.Districts).ThenInclude(d => d.Provinces).Include(p => p.OrderStatus).Include(p => p.User).ToListAsync();
+
+            var order_map = _mapper.Map<List<OrdersViewModel>>(order);
+            if(status != 0 && status != Globals.KHACH_HUY && status != Globals.SHOP_HUY)
+            {
+                order_map = order_map.Where(o => o.Status == status).ToList();
+            }
+            if(id != 0)
+            {
+                order_map = order_map.Where(o => o.OrderId == id).ToList();
+            }
+            if(status == Globals.KHACH_HUY || status == Globals.SHOP_HUY)
+            {
+                order_map = order_map.Where(o => o.Status == Globals.SHOP_HUY || o.Status == Globals.KHACH_HUY).ToList();
+            }
+            switch (sort)
+            {
+                case "datedesc":
+                    order_map = order_map.OrderByDescending(p => p.OrderId).ToList();
+                    break;
+                case "pricedesc":
+                    order_map = order_map.OrderByDescending(p => p.TotalPrice).ToList();
+                    break;
+                case "priceasc":
+                    order_map = order_map.OrderBy(p => p.TotalPrice).ToList();
+                    break;
+            }
+            if(size < 1)
+            {
+                size = 10;
+            }
+            int totalOrders = order_map.Count();
+            int totalPages = (int)Math.Ceiling(totalOrders / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var order_page = order_map.Skip(size * (page - 1)).Take(size).ToList();
+
+            var outputModel = new OrderOutputViewModel
+            {
+                Paging = new Paging(totalOrders, page, size, totalPages),
+                Orders = order_page
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = outputModel
+            });
+        }
+
         // PUT: api/Orders/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutOrders([FromRoute] int id, [FromBody] Orders orders)
@@ -231,7 +342,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // POST: api/Orders
-        [HttpPost("{addressId}")]
+        [HttpPost("orders/{addressId}")]
         public async Task<IActionResult> PostOrders([FromBody] List<CartOrderViewModel> cartClient, int addressId)
         {
 

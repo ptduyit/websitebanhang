@@ -71,8 +71,8 @@ namespace WebsiteBanHang.Controllers
         }
 
         // PUT: api/Users/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser([FromRoute] Guid id, [FromBody] User user)
+        [HttpPut("changepassword/{id}")]
+        public async Task<IActionResult> ChangePassword([FromRoute] Guid id, [FromBody] Password password)
         {
             if (!ModelState.IsValid)
             {
@@ -83,32 +83,35 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-
-            if (id != user.Id)
+            var user = await _context.User.FindAsync(id);
+            
+            if (user == null)
             {
                 return Ok(new Response
                 {
                     IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
+                    Status = 404,
+                    Message = "Tài khoản không tồn tại"
                 });
             }
-
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
+            bool result = await _userManager.CheckPasswordAsync(user, password.PassOld);
+            if (!result)
             {
-                await _context.SaveChangesAsync();
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 406,
+                    Message = "Sai mật khẩu"
+                });
             }
-            catch (DbUpdateConcurrencyException)
+            else
             {
-                if (!UserExists(id))
+                var rs = await _userManager.ChangePasswordAsync(user, password.PassOld, password.PassNew);
+                if (rs.Succeeded)
                 {
                     return Ok(new Response
                     {
-                        IsError = true,
-                        Status = 409,
-                        Message = "Sai dữ liệu đầu vào"
+                        Status = 200
                     });
                 }
                 else
@@ -116,17 +119,10 @@ namespace WebsiteBanHang.Controllers
                     return Ok(new Response
                     {
                         IsError = true,
-                        Status = 409,
-                        Message = "Không thể lưu dữ liệu"
+                        Status = 409
                     });
-                    throw;
                 }
             }
-
-            return Ok(new Response
-            {
-                Status = 204
-            });
         }
 
         // POST: api/Users

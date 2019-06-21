@@ -46,6 +46,15 @@ namespace WebsiteBanHang.ViewModels.Mappings
             CreateMap<CartDetails, CartOrderViewModel>()
                 .ForMember(v => v.UnitPrice, m => m.MapFrom(c => c.Product.UnitPrice))
                 .ForMember(v => v.Discontinued, m => m.MapFrom(c => c.Product.Discontinued));
+
+            CreateMap<Orders, OrdersViewModel>().ForMember(v => v.Wards, m => m.MapFrom(c => c.Wards.Name))
+                .ForMember(v => v.Districts, m => m.MapFrom(c => c.Wards.Districts.Name))
+                .ForMember(v => v.Provinces, m => m.MapFrom(c => c.Wards.Districts.Provinces.Name))
+                .ForMember(v => v.StatusName, m => m.MapFrom(c => c.OrderStatus.StatusName))
+                .ForMember(v => v.NameUser, m => m.MapFrom(c => c.User.FullName));
+            CreateMap<OrderDetails, OrderDetailsViewModel>().ForMember(v => v.Discontinued, m => m.MapFrom(c => c.Product.Discontinued))
+                .ForMember(v => v.ProductImages, m => m.MapFrom(c => c.Product.ProductImages.FirstOrDefault(p => p.IsThumbnail == true).Url))
+                .ForMember(v => v.ProductName, m => m.MapFrom(c => c.Product.ProductName));
         }
     }
 }

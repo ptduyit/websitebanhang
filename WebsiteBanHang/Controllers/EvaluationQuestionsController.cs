@@ -6,6 +6,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebsiteBanHang.Helpers;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
 
@@ -125,6 +126,33 @@ namespace WebsiteBanHang.Controllers
                 Status = 200,
                 Module = output
             });
+        }
+        [HttpGet("review/{userid}")]
+        public async Task<IActionResult> GetReviewUser(Guid userid, [FromQuery] int type)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var order = await _context.OrderDetails.Include(a => a.Order).Include(a => a.Product).ThenInclude(b =>b.ProductImages)
+                .Where(a => a.Order.UserId == userid && a.Order.Status == Globals.DA_GIAO)
+                .GroupBy(a => a.ProductId).Select(a => a.First()).ToListAsync();
+            var product = _mapper.Map<List<ProductOrderViewModel>>(order);
+
+            var review_history = await _context.EvaluationQuestions.Where(a => a.Rate != null && a.UserId == userid)
+                .Select(a => a.ProductId).ToListAsync();
+
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = product
+            });
+
         }
 
         // PUT: api/EvaluationQuestions/5

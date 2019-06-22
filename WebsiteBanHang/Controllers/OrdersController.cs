@@ -49,8 +49,18 @@ namespace WebsiteBanHang.Controllers
                 });
             }
 
-            Orders orders = _context.Orders.Where(o => o.OrderId == id).SingleOrDefault();
+            Orders orders = _context.Orders.Include(o => o.OrderDetails).Where(o => o.OrderId == id).SingleOrDefault();
+
             orders.Status = status;
+            if(status == Globals.KHACH_HUY || status == Globals.SHOP_HUY)
+            {
+                foreach(var details in orders.OrderDetails)
+                {
+                    var product = _context.Products.Find(details.ProductId);
+                    product.Stock += details.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
+                }
+            }
             _context.Entry(orders).State = EntityState.Modified;
 
             try
@@ -79,7 +89,73 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
+        [HttpGet("orders/cancel/{userid}/{orderid}")]
+        public async Task<IActionResult> CancelOrderUser([FromRoute] int orderid, [FromRoute] Guid userid)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
 
+            Orders orders = _context.Orders.Include(o => o.OrderDetails).Where(o => o.OrderId == orderid).SingleOrDefault();
+            if(orders.Status != Globals.CHO_XAC_NHAN)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Dữ liệu đã thay đổi"
+                });
+            }
+            if(orders.UserId != userid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 403,
+                    Message = "Bạn không có quyền"
+                });
+            }
+            orders.Status = Globals.KHACH_HUY;
+            foreach (var details in orders.OrderDetails)
+            {
+                var product = _context.Products.Find(details.ProductId);
+                product.Stock += details.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
+            }
+            _context.Entry(orders).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!OrdersExists(orderid))
+                {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Status = 404,
+                        Message = "Không tìm thấy dữ liệu"
+                    });
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return Ok(new Response
+            {
+                Status = 204
+            });
+        }
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
@@ -112,8 +188,8 @@ namespace WebsiteBanHang.Controllers
                 Module = orders
             });
         }
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrderByIdUser([FromRoute] Guid id)
+        [HttpGet("user/orders/{id}")]
+        public async Task<IActionResult> GetOrderByIdUser([FromRoute] Guid id, [FromQuery] int status, [FromQuery] int page)
         {
             if (!ModelState.IsValid)
             {
@@ -124,24 +200,36 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
+            int size = 5;
+            var order = await _context.Orders.Include(p => p.OrderDetails).ThenInclude(od => od.Product)
+                .ThenInclude(pr => pr.ProductImages).Include(p => p.Wards).ThenInclude(w => w.Districts)
+                .ThenInclude(d => d.Provinces).Include(p => p.OrderStatus).Include(p => p.User)
+                .AsNoTracking().Where(p => p.UserId == id).ToListAsync();
 
-            var orders = await _context.Orders.Select(o => o).Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.UserId == id).OrderByDescending(d => d.OrderDate).ToListAsync();
-
-            if (!orders.Any())
+            var order_map = _mapper.Map<List<OrdersViewModel>>(order);
+            if (status != 0 && status != Globals.KHACH_HUY && status != Globals.SHOP_HUY)
             {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 404,
-                    Message = "Không tìm thấy dữ liệu"
-                });
+                order_map = order_map.Where(o => o.Status == status).ToList();
             }
-            //orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
+            if (status == Globals.KHACH_HUY || status == Globals.SHOP_HUY)
+            {
+                order_map = order_map.Where(o => o.Status == Globals.SHOP_HUY || o.Status == Globals.KHACH_HUY).ToList();
+            }
 
+            int totalOrders = order_map.Count();
+            int totalPages = (int)Math.Ceiling(totalOrders / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var order_page = order_map.Skip(size * (page - 1)).Take(size).ToList();
+
+            var outputModel = new OrderOutputViewModel
+            {
+                Paging = new Paging(totalOrders, page, size, totalPages),
+                Orders = order_page
+            };
             return Ok(new Response
             {
                 Status = 200,
-                Module = orders
+                Module = outputModel
             });
         }
         [HttpGet("admin/orders/check-history/{id}")]
@@ -209,6 +297,14 @@ namespace WebsiteBanHang.Controllers
             var order = await _context.Orders.Include(p => p.OrderDetails).ThenInclude(od => od.Product).ThenInclude(pr => pr.ProductImages)
                 .Include(p => p.Wards).ThenInclude(w => w.Districts).ThenInclude(d => d.Provinces).Include(p => p.OrderStatus).Include(p => p.User).ToListAsync();
 
+            int[] countOrder = new int[6];
+            countOrder[0] = order.Count();
+            for(int i = 1;i <= 4; i++)
+            {
+                countOrder[i] = order.Where(p => p.Status == i).Count();
+            }
+            countOrder[5] = order.Where(p => p.Status == 5 || p.Status == 6).Count();
+
             var order_map = _mapper.Map<List<OrdersViewModel>>(order);
             if(status != 0 && status != Globals.KHACH_HUY && status != Globals.SHOP_HUY)
             {
@@ -246,7 +342,8 @@ namespace WebsiteBanHang.Controllers
             var outputModel = new OrderOutputViewModel
             {
                 Paging = new Paging(totalOrders, page, size, totalPages),
-                Orders = order_page
+                Orders = order_page,
+                CountOrder = countOrder
             };
             return Ok(new Response
             {

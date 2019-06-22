@@ -35,6 +35,7 @@ namespace WebsiteBanHang.ViewModels
     public class OrderOutputViewModel
     {
         public Paging Paging { get; set; }
+        public int[] CountOrder { get; set; }
         public List<OrdersViewModel> Orders { get; set; }
     }
     public class HistoryBuy

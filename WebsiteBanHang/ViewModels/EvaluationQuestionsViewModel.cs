@@ -56,4 +56,32 @@ namespace WebsiteBanHang.ViewModels
         public Paging Paging { get; set; }
         public List<EvaluationQuestionsViewModel> Questions { get; set; }
     }
+    public class ProductOrderViewModel
+    {
+        public DateTime OrderDate { get; set; }
+        public int ProductId { get; set; }
+        public string ProductName { get; set; }
+        public string Image { get; set; }
+    }
+    public class ProductNotReview
+    {
+        public Paging Paging { get; set; }
+        public List<ProductOrderViewModel> Products { get; set; }
+    }
+    public class ProductHistoryEvaluationViewModel
+    {
+        public DateTime OrderDate { get; set; }
+        public int ProductId { get; set; }
+        public string ProductName { get; set; }
+        public string Image { get; set; }
+        public int Rate { get; set; }
+        public string Content { get; set; }
+        public DateTime Date { get; set; }
+        public int EvaluationId { get; set; }
+    }
+    public class ProductReviewHistory
+    {
+        public Paging Paging { get; set; }
+        public List<ProductHistoryEvaluationViewModel> Products { get; set; }
+    }
 }

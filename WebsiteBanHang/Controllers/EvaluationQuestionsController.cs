@@ -127,9 +127,10 @@ namespace WebsiteBanHang.Controllers
                 Module = output
             });
         }
-        [HttpGet("review/{userid}")]
-        public async Task<IActionResult> GetReviewUser(Guid userid, [FromQuery] int type)
+        [HttpGet("not-review/{userid}")]
+        public async Task<IActionResult> GetNotReviewUser(Guid userid, [FromQuery] int page)
         {
+            int size = 10;
             if (!ModelState.IsValid)
             {
                 return Ok(new Response
@@ -146,11 +147,55 @@ namespace WebsiteBanHang.Controllers
 
             var review_history = await _context.EvaluationQuestions.Where(a => a.Rate != null && a.UserId == userid)
                 .Select(a => a.ProductId).ToListAsync();
+            var product_not_review = product.Where(p => !review_history.Contains(p.ProductId)).ToList();
+
+            int totalItem = product_not_review.Count();
+            int totalPages = (int)Math.Ceiling(totalItem / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product_page = product_not_review.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new ProductNotReview
+            {
+                Paging = new Paging(totalItem, page, size, totalPages),
+                Products = product_page
+            };
 
             return Ok(new Response
             {
                 Status = 200,
-                Module = product
+                Module = output
+            });
+
+        }
+        [HttpGet("review-history/{userid}")]
+        public async Task<IActionResult> GetHistoryReviewUser(Guid userid, [FromQuery] int page)
+        {
+            int size = 10;
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var review = await _context.EvaluationQuestions.Include(p => p.Product).ThenInclude(i =>i.ProductImages)
+                .Where(p => p.Rate != null && p.UserId == userid).ToListAsync();
+            var review_map = _mapper.Map<List<ProductHistoryEvaluationViewModel>>(review);
+
+            int totalItem = review_map.Count();
+            int totalPages = (int)Math.Ceiling(totalItem / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product_page = review_map.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new ProductReviewHistory
+            {
+                Paging = new Paging(totalItem, page, size, totalPages),
+                Products = product_page
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
             });
 
         }
@@ -207,7 +252,47 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
+        [HttpPost("review/add")]
+        public async Task<IActionResult> PostPutReview([FromBody] EvaluationQuestions evaluation)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            if(evaluation.EvaluationId > 0)
+            {
+                evaluation.Date = DateTime.Now;
+                _context.Entry(evaluation).State = EntityState.Modified; 
+            }
+            else
+            {
+                evaluation.Date = DateTime.Now;
+                _context.EvaluationQuestions.Add(evaluation);
+            }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể lưu"
+                });
+            }
 
+            return Ok(new Response
+            {
+                Status = 204
+            });
+        }
         // POST: api/EvaluationQuestions
         [HttpPost]
         public async Task<IActionResult> PostEvaluationQuestions([FromBody] EvaluationQuestions evaluation)

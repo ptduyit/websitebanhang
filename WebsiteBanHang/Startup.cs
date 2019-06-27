@@ -28,8 +28,6 @@ namespace WebsiteBanHang
 {
     public class Startup
     {
-        private const string SecretKey = "iNivDmHLpUA223sqsfhqGbMRdRj1PVkH"; // todo: get this from somewhere secure
-        private readonly SymmetricSecurityKey _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecretKey));
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -45,9 +43,12 @@ namespace WebsiteBanHang
                     Configuration.GetConnectionString("DefaultConnection")));
 
             var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
+            var secretAppsetting = Configuration.GetSection(nameof(JwtSecretKey));
 
-            // Configure JwtIssuerOptions
-            services.Configure<JwtIssuerOptions>(options =>
+            SymmetricSecurityKey _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretAppsetting[nameof(JwtSecretKey.SecretKey)]));
+
+        // Configure JwtIssuerOptions
+        services.Configure<JwtIssuerOptions>(options =>
             {
                 options.Issuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
                 options.Audience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)];
@@ -159,6 +160,7 @@ namespace WebsiteBanHang
             //initializing custom roles 
             var UserManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var RoleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            //var saleDBContext = serviceProvider.GetRequiredService<SaleDBContext>();
             string[] roleNames = { "Admin", "Manager", "Member" };
             Task<IdentityResult> roleResult;
 
@@ -168,33 +170,40 @@ namespace WebsiteBanHang
                 roleExist.Wait();
                 if (!roleExist.Result)
                 {
-                    //create the roles and seed them to the database: Question 1
                     roleResult = RoleManager.CreateAsync(new IdentityRole<Guid>(roleName));
                     roleResult.Wait();
                 }
             }
 
-            //Here you could create a super user who will maintain the web app
-            var poweruser = new User
-            {
-                UserName = "admin@gmail.com",//Configuration["UserSettings:UserEmail"],
-                Email = "admin@gmail.com"
-            };
-            //Ensure you have these values in your appsettings.json file
-            string userPWD = "123123123";//Configuration["UserSettings:UserPassword"];
-            Task<User> _user = UserManager.FindByEmailAsync("admin@gmail.com");//Configuration["UserSettings:UserEmail"]);
-            _user.Wait();
+            //var poweruser = new User
+            //{
+            //    UserName = "admin@gmail.com",//Configuration["UserSettings:UserEmail"],
+            //    Email = "admin@gmail.com"
+            //};
+            //string userPWD = "123123123";//Configuration["UserSettings:UserPassword"];
+            //Task<User> _user = UserManager.FindByEmailAsync("admin@gmail.com");//Configuration["UserSettings:UserEmail"]);
+            //_user.Wait();
 
-            if (_user.Result == null)
-            {
-                Task<IdentityResult> createPowerUser = UserManager.CreateAsync(poweruser, userPWD);
-                if (createPowerUser.Result.Succeeded)
-                {
-                    //here we tie the new user to the role
-                    Task<IdentityResult> newUserRole = UserManager.AddToRoleAsync(poweruser, "Admin");
-                    newUserRole.Wait();
-                }
-            }
+            //if (_user.Result == null)
+            //{
+            //    Task<IdentityResult> createPowerUser = UserManager.CreateAsync(poweruser, userPWD);
+            //    if (createPowerUser.Result.Succeeded)
+            //    {
+            //        //here we tie the new user to the role
+            //        Task<IdentityResult> newUserRole = UserManager.AddToRoleAsync(poweruser, "Admin");
+            //        newUserRole.Wait();
+            //        Task<User> user = UserManager.FindByEmailAsync("admin@gmail.com");
+            //        user.Wait();
+            //        Guid UserId = user.Result.Id;
+            //        saleDBContext.Add(new UserInfo
+            //        {
+            //            UserId = UserId,
+            //            FullName = "admin",
+            //            BirthDate = DateTime.Now
+            //        });
+            //        saleDBContext.SaveChanges();
+            //    }
+            //}
         }
     }
 }

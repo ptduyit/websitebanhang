@@ -25,10 +25,81 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/OrdersImportGoods
-        [HttpGet]
-        public IEnumerable<OrdersImportGoods> GetOrdersImportGoods()
+        [HttpGet("order-import")]
+        public async Task<IActionResult> GetOrdersImportGoods([FromQuery] string type, [FromQuery] string keyword, [FromQuery] bool temporary,[FromQuery] int page)
         {
-            return _context.OrdersImportGoods;
+            int size = 3;
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var order = await _context.OrdersImportGoods.Include(p => p.Supplier).Include(p => p.User).OrderByDescending(p => p.OrderId).ToListAsync();
+            var order_map = _mapper.Map<List<OrderImportAllViewModel>>(order);
+            if (temporary)
+            {
+                order_map = order_map.Where(p => p.Complete == false).ToList();
+            }
+            if (!String.IsNullOrEmpty(keyword) && keyword != "undefined")
+            {
+                if (type == "user")
+                {
+                    var rs = order_map.Where(p => p.UserId.ToString() == keyword).ToList();
+                    if (!rs.Any())
+                    {
+                        order_map = order_map.Where(p => p.FullName != null).ToList();
+                        var searchString = keyword.Split(' ');
+                        searchString = searchString.Select(x => x.ToLower()).ToArray();
+                        rs = order_map.Where(p => searchString.All(s => p.FullName.ToLower().Contains(s))).ToList();
+                    }
+                    order_map = rs;
+                }
+                else if (type == "supplier")
+                {
+                    if (Int32.TryParse(keyword, out int id))
+                    {
+                        order_map = order_map.Where(p => p.SupplierId == id).ToList();
+                    }
+                    else
+                    {
+                        order_map = order_map.Where(p => p.CompanyName != null).ToList();
+                        var searchString = keyword.Split(' ');
+                        searchString = searchString.Select(x => x.ToLower()).ToArray();
+                        order_map = order_map.Where(p => searchString.All(s => p.CompanyName.ToLower().Contains(s))).ToList();
+                    }
+                    
+                }
+                else if (type == "order")
+                {
+                    if (Int32.TryParse(keyword, out int id))
+                    {
+                        order_map = order_map.Where(p => p.OrderId == id).ToList();
+                    }
+                    else
+                    {
+                        order_map = new List<OrderImportAllViewModel>();
+                    }
+                }
+            }
+            int totalOrders = order_map.Count();
+            int totalPages = (int)Math.Ceiling(totalOrders / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var order_page = order_map.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new OrderImportOutputViewModel
+            {
+                Paging = new Paging(totalOrders, page, size, totalPages),
+                Orders = order_map
+            };
+
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
         }
 
         // GET: api/OrdersImportGoods/5
@@ -93,7 +164,7 @@ namespace WebsiteBanHang.Controllers
             orders.SupplierId = ordersView.SupplierId;
 
             decimal totalPrice = 0;
-            foreach(var detail in ordersView.Product)
+            foreach (var detail in ordersView.Product)
             {
                 totalPrice += detail.Quantity * detail.UnitPrice;
                 detail.OrderId = id;
@@ -228,7 +299,7 @@ namespace WebsiteBanHang.Controllers
                 Quantity = 0,
                 UnitPrice = 0
             });
-            
+
             _context.OrdersImportGoods.Add(orders);
             try
             {
@@ -243,7 +314,7 @@ namespace WebsiteBanHang.Controllers
                     Message = "không thể lưu dữ liệu"
                 });
             }
-            
+
             return Ok(new Response
             {
                 Status = 201,
@@ -251,7 +322,7 @@ namespace WebsiteBanHang.Controllers
             });
         }
         [HttpPost("orderdetail-import")]
-        public async Task<IActionResult> CreateOrderDetail([FromBody] OrderImportDetailsViewModel detail )
+        public async Task<IActionResult> CreateOrderDetail([FromBody] OrderImportDetailsViewModel detail)
         {
             if (!ModelState.IsValid)
             {
@@ -323,7 +394,7 @@ namespace WebsiteBanHang.Controllers
                 });
             }
             var orderDetail = await _context.OrderImportGoodsDetails.Where(p => p.OrderId == oid && p.ProductId == pid).FirstOrDefaultAsync();
-            if(orderDetail == null)
+            if (orderDetail == null)
             {
                 return Ok(new Response
                 {
@@ -340,7 +411,7 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
-        
+
         private bool OrdersImportGoodsExists(int id)
         {
             return _context.OrdersImportGoods.Any(e => e.OrderId == id);

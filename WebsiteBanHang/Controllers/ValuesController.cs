@@ -12,6 +12,7 @@ namespace WebsiteBanHang.Controllers
     public class ValuesController : ControllerBase
     {
         // GET api/values
+        [Authorize(Roles = "Member")]
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {

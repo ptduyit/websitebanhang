@@ -64,6 +64,21 @@ namespace WebsiteBanHang.ViewModels
         public decimal UnitPrice { get; set; }
         public string Image { get; set; }
     }
-    
+    public class ProductManage
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public decimal UnitPrice { get; set; }
+        public bool Discontinued { get; set; }
+        public int Stock { get; set; }
+        public bool DisplayIndex { get; set; }
+    }
+    public class OutputProductManage
+    {
+        public Paging Paging { get; set; }
+        public List<ProductManage> Products { get; set; }
+    }
 
 }

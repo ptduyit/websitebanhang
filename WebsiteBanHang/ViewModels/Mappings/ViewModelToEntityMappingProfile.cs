@@ -63,6 +63,11 @@ namespace WebsiteBanHang.ViewModels.Mappings
                 .ForMember(v => v.ProductName, m => m.MapFrom(c => c.Product.ProductName))
                 .ForMember(v => v.Image, m => m.MapFrom(c => c.Product.ProductImages.FirstOrDefault(p => p.IsThumbnail == true).Url));
 
+            CreateMap<OrdersImportGoods, OrderImportAllViewModel>().ForMember(v => v.CompanyName, m => m.MapFrom(c => c.Supplier.CompanyName))
+                .ForMember(v => v.FullName, m => m.MapFrom(c => c.User.FullName))
+                .ForMember(v => v.Complete, m => m.MapFrom(c => c.TotalPrice > 0));
+
+            CreateMap<Products, ProductManage>().ForMember(v => v.CategoryName, m => m.MapFrom(c => c.Category.CategoryName));
         }
     }
 }

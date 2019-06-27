@@ -43,4 +43,20 @@ namespace WebsiteBanHang.ViewModels
         public int ProductId { get; set; }
         public string ProductName { get; set; }
     }
+    public class OrderImportAllViewModel
+    {
+        public int OrderId { get; set; }
+        public int? SupplierId { get; set; }
+        public string CompanyName { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public DateTime OrderDate { get; set; }
+        public Guid? UserId { get; set; }
+        public string FullName { get; set; }
+        public bool Complete { get; set; }
+    }
+    public class OrderImportOutputViewModel
+    {
+        public Paging Paging { get; set; }
+        public List<OrderImportAllViewModel> Orders { get; set; }
+    }
 }

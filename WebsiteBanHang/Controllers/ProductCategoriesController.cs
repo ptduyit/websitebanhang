@@ -31,8 +31,21 @@ namespace WebsiteBanHang.Controllers
             var category = await _context.ProductCategories.Select(p => new CategorySelectViewModel
             {
                 CategoryId = p.CategoryId,
-                CategoryName = p.CategoryName
+                CategoryName = p.CategoryName,
+                isLast = false
             }).ToListAsync();
+
+            var listChildren = await _context.ProductCategories.Where(p => p.CategoryChildrens.Count() == 0)
+                .Select(p => p.CategoryId).ToListAsync();
+
+            category.ForEach(e =>
+            {
+                if (listChildren.Contains(e.CategoryId))
+                {
+                    e.isLast = true;
+                }
+            });
+
             if (!category.Any())
             {
                 return Ok(new Response
@@ -48,6 +61,30 @@ namespace WebsiteBanHang.Controllers
                 Status = 200
             });
         }
+
+        //[HttpGet("admin/category/select-full")]
+        //public async Task<IActionResult> GetCategorySelectAll()
+        //{
+        //    var category = await _context.ProductCategories.Select(p => new CategorySelectViewModel
+        //    {
+        //        CategoryId = p.CategoryId,
+        //        CategoryName = p.CategoryName
+        //    }).ToListAsync();
+        //    if (!category.Any())
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 404,
+        //            Message = "không tìm thấy dữ liệu"
+        //        });
+        //    }
+        //    return Ok(new Response
+        //    {
+        //        Module = category,
+        //        Status = 200
+        //    });
+        //}
         [HttpGet("admin/category/select-product")]
         public async Task<IActionResult> GetCategorySelectProduct()
         {

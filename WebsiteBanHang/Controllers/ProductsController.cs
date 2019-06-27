@@ -36,9 +36,132 @@ namespace WebsiteBanHang.Controllers
         }
 
         [HttpGet("admin/[controller]")]
-        public IEnumerable<Products> GetProducts([FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> GetProducts([FromQuery] int page, [FromQuery] int size, [FromQuery] string status,[FromQuery] string keyword, [FromQuery] string categoryid)
         {
-            return _context.Products;
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var products = await _context.Products.Include(p => p.Category).ToListAsync();
+            var products_map = _mapper.Map<List<ProductManage>>(products);
+            if (Int32.TryParse(categoryid, out int cid))
+            {
+                if(cid> 0)
+                {
+                    products_map = products_map.Where(p => p.CategoryId == cid).ToList();
+                }
+            }
+            switch (status)
+            {
+                case "stock":
+                    products_map = products_map.Where(p => p.Stock < 6).ToList();
+                    break;
+                case "discontinued":
+                    products_map = products_map.Where(p => p.Discontinued == true).ToList();
+                    break;
+                case "index":
+                    products_map = products_map.Where(p => p.DisplayIndex == true).ToList();
+                    break;
+                case "price":
+                    products_map = products_map.Where(p => p.UnitPrice == 0).ToList();
+                    break;
+            }
+            if (!String.IsNullOrEmpty(keyword) && keyword != "undefined")
+            {
+                if (Int32.TryParse(keyword, out int id))
+                {
+                    products_map = products_map.Where(p => p.ProductId == id).ToList();
+                }
+                else
+                {
+                    products_map = products_map.Where(p => p.ProductName != null).ToList();
+                    var searchString = keyword.Split(' ');
+                    searchString = searchString.Select(x => x.ToLower()).ToArray();
+                    products_map = products_map.Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s))).ToList();
+                }
+            }
+            if (size < 1)
+            {
+                size = 10;
+            }
+            int totalProduct = products_map.Count();
+            int totalPages = (int)Math.Ceiling(totalProduct / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product_page = products_map.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new OutputProductManage
+            {
+                Paging = new Paging(totalProduct, page, size, totalPages),
+                Products = product_page
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
+
+        }
+        [HttpGet("admin/change-status/{id}/{status}")]
+        public async Task<IActionResult> ChangeStatus(int id, string status)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            if(status == "discontinued" || status == "index")
+            {
+                var product = await _context.Products.FindAsync(id);
+                if(product == null)
+                {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Message = "not found",
+                        Status = 404
+                    });
+                }
+                if(status == "discontinued")
+                {
+                    product.Discontinued = !product.Discontinued;
+                }
+                else
+                {
+                    product.DisplayIndex = !product.DisplayIndex;
+                }
+                _context.Entry(product).State = EntityState.Modified;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return Ok(new Response
+                    {
+                        IsError = true,
+                        Message = "not save",
+                        Status = 409
+                    });
+                }
+                return Ok(new Response
+                {
+                    Status = 204
+                });
+            }
+            return Ok(new Response
+            {
+                IsError = true,
+                Status = 400,
+                Message = "Sai dữ liệu đầu vào"
+            });
         }
 
         [HttpGet("admin/[controller]/{id}")]
@@ -127,25 +250,25 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetStockProduct([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
-            var stock = await _context.Products.Where(p => p.ProductId == id).Select(i => new { i.Stock }).SingleOrDefaultAsync();
-            return Ok(new Response
-            {
-                Status = 200,
-                Module = stock
-            });
-        }
+        //[HttpGet("{id}")]
+        //public async Task<IActionResult> GetStockProduct([FromRoute] int id)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
+        //    var stock = await _context.Products.Where(p => p.ProductId == id).Select(i => new { i.Stock }).SingleOrDefaultAsync();
+        //    return Ok(new Response
+        //    {
+        //        Status = 200,
+        //        Module = stock
+        //    });
+        //}
         [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {

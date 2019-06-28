@@ -21,27 +21,134 @@ namespace WebsiteBanHang.Controllers
     {
         private readonly SaleDBContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly IMapper _mapper;
         private readonly JwtIssuerOptions _jwtOptions;
 
-        public UsersController(UserManager<User> userManager, IMapper mapper, SaleDBContext context, IOptions<JwtIssuerOptions> jwtOptions)
+        public UsersController(UserManager<User> userManager, IMapper mapper, SaleDBContext context, IOptions<JwtIssuerOptions> jwtOptions, RoleManager<IdentityRole<Guid>> roleManager)
         {
             _context = context;
             _mapper = mapper;
             _userManager = userManager;
             _jwtOptions = jwtOptions.Value;
+            _roleManager = roleManager;
         }
 
         // GET: api/Users
-        //
-        [Authorize]
         [HttpGet]
-        public IActionResult GetUser()
+        public async Task<IActionResult> GetUser([FromQuery] int page, [FromQuery] string keyword,[FromQuery] string role)
         {
-            var query = _context.User;//.Join(_context.UserInfo, u => u.Id, i => i.UserId, (u, i) => new { u, i });
-            return Ok(query);
-        }
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var user = await _context.User.Include(u => u.UserInfo).ToListAsync();
+            var user_map = _mapper.Map<List<UserManage>>(user);
+            await Task.WhenAll(user_map.Select(async u =>
+            {
+                var userEntity = await _userManager.FindByIdAsync(u.UserId.ToString());
+                u.Role = string.Join("; ", await _userManager.GetRolesAsync(userEntity));
+            }).ToList());
 
+            switch (role)
+            {
+                case "admin":
+                    user_map = user_map.Where(u => u.Role == "admin").ToList();
+                    break;
+                case "employee":
+                    user_map = user_map.Where(u => u.Role == "employee").ToList();
+                    break;
+                case "member":
+                    user_map = user_map.Where(u => u.Role == "member").ToList();
+                    break;
+            }
+            if (!String.IsNullOrEmpty(keyword) && keyword != "undefined")
+            {
+                var rs = user_map.Where(p => p.UserId.ToString() == keyword).ToList();
+                if (!rs.Any())
+                {
+                    user_map = user_map.Where(p => p.FullName != null).ToList();
+                    var searchString = keyword.Split(' ');
+                    searchString = searchString.Select(x => x.ToLower()).ToArray();
+                    rs = user_map.Where(p => searchString.All(s => p.FullName.ToLower().Contains(s))).ToList();
+                }
+                user_map = rs;
+            }
+            int size = 10;
+            int totalUsers = user_map.Count();
+            int totalPages = (int)Math.Ceiling(totalUsers / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            user_map = user_map.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new PagingUserManage
+            {
+                Paging = new Paging(totalUsers, page, size, totalPages),
+                UserManages = user_map
+            };
+
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
+
+        }
+        [HttpGet("change-role/{id}/{role}")]
+        public async Task<IActionResult> ChangeRole(Guid id, string role)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if(user == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "not found user"
+                });
+            }
+            var oldRole = await _userManager.GetRolesAsync(user);
+            var exist = await _roleManager.RoleExistsAsync(role);
+            if (!exist)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "not found role"
+                });
+            }
+            if(role != oldRole[0])
+            {
+                var remove = await _userManager.RemoveFromRoleAsync(user, oldRole[0]);
+                var add = await _userManager.AddToRoleAsync(user, role);
+                if(remove.Succeeded && add.Succeeded)
+                {
+                    return Ok(new Response
+                    {
+                        Status = 204
+                    });
+                }
+            }
+            return Ok(new Response
+            {
+                IsError = true,
+                Status = 401,
+                Message = "role not change"
+            });
+        }
         // GET: api/Users/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser([FromRoute] Guid id)

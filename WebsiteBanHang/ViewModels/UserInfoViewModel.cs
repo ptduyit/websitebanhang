@@ -25,4 +25,17 @@ namespace WebsiteBanHang.ViewModels
         public string PassOld { get; set; }
         public string PassNew { get; set; }
     }
+    public class UserManage
+    {
+        public string FullName { get; set; }
+        public Guid UserId { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+    }
+    public class PagingUserManage
+    {
+        public List<UserManage> UserManages { get; set; }
+        public Paging Paging { get; set; }
+    }
 }

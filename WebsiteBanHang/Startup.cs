@@ -161,7 +161,7 @@ namespace WebsiteBanHang
             var UserManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var RoleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
             //var saleDBContext = serviceProvider.GetRequiredService<SaleDBContext>();
-            string[] roleNames = { "Admin", "Manager", "Member" };
+            string[] roleNames = { "admin", "employee", "member" };
             Task<IdentityResult> roleResult;
 
             foreach (var roleName in roleNames)

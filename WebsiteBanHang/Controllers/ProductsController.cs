@@ -318,8 +318,8 @@ namespace WebsiteBanHang.Controllers
         // GET: api/Products/5
 
 
-        [HttpGet("{name}")]
-        public async Task<IActionResult> GetProductByName([FromRoute] string name)
+        [HttpGet("[controller]/quick-search/{keyword}")]
+        public async Task<IActionResult> GetProductByName([FromRoute] string keyword)
         {
             if (!ModelState.IsValid)
             {
@@ -331,15 +331,18 @@ namespace WebsiteBanHang.Controllers
                 });
             }
 
-            var products = await _context.Products.Where(p => name == null || p.ProductName.StartsWith(name) || p.ProductName.EndsWith(name) || p.ProductName.Contains(name)).Take(10).Select(i => new ProductSearchViewModel
+            var searchString = keyword.Split(' ');
+            searchString = searchString.Select(x => x.ToLower()).ToArray();
+            var rs = await _context.Products.Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s)) && p.Discontinued == false && p.Stock > 0).Select(x => new
             {
-                ProductId = i.ProductId,
-                ProductName = i.ProductName,
-                UnitPrice = i.UnitPrice,
-                //Image = i.Image
-            }).ToListAsync();
-
-            return Ok(products);
+                x.ProductId,
+                x.ProductName
+            }).Take(5).ToListAsync();
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = rs
+            });
         }
         // PUT: api/Products/5
         [HttpPut("admin/[controller]/{id}")]

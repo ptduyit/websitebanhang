@@ -215,7 +215,7 @@ namespace WebsiteBanHang.Controllers
             {
                 order_map = order_map.Where(o => o.Status == Globals.SHOP_HUY || o.Status == Globals.KHACH_HUY).ToList();
             }
-
+            order_map = order_map.OrderByDescending(o => o.OrderId).ToList();
             int totalOrders = order_map.Count();
             int totalPages = (int)Math.Ceiling(totalOrders / (float)size);
             page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
@@ -460,7 +460,7 @@ namespace WebsiteBanHang.Controllers
                 {
                     IsError = true,
                     Message = "Sai địa chỉ nhận hàng",
-                    Status = 404
+                    Status = 418
                 });
             }
 

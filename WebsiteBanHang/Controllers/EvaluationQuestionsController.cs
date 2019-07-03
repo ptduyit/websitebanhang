@@ -130,7 +130,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("not-review/{userid}")]
         public async Task<IActionResult> GetNotReviewUser(Guid userid, [FromQuery] int page)
         {
-            int size = 10;
+            int size = 5;
             if (!ModelState.IsValid)
             {
                 return Ok(new Response
@@ -169,7 +169,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("review-history/{userid}")]
         public async Task<IActionResult> GetHistoryReviewUser(Guid userid, [FromQuery] int page)
         {
-            int size = 10;
+            int size = 5;
             if (!ModelState.IsValid)
             {
                 return Ok(new Response

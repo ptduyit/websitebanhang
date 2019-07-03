@@ -116,8 +116,9 @@ namespace WebsiteBanHang.Controllers
                 });
             }
 
-            var ordersImportGoods = await _context.OrdersImportGoods.Include(o => o.User).Include(o => o.Supplier).Include(o => o.OrderImportGoodsDetails)
-                .ThenInclude(i => i.Product).Where(o => o.OrderId == id).FirstOrDefaultAsync();
+            var ordersImportGoods = await _context.OrdersImportGoods.Include(o => o.User).Include(o => o.Supplier)
+                .Include(o => o.OrderImportGoodsDetails).ThenInclude(i => i.Product).ThenInclude(p => p.ProductImages)                
+                .Where(o => o.OrderId == id).FirstOrDefaultAsync();
 
             if (ordersImportGoods == null)
             {
@@ -349,7 +350,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // DELETE: api/OrdersImportGoods/5
-        [HttpDelete("{id}")]
+        [HttpDelete("order-import/{id}")]
         public async Task<IActionResult> DeleteOrdersImportGoods([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -372,7 +373,15 @@ namespace WebsiteBanHang.Controllers
                     Message = "Không tìm thấy dữ liệu"
                 });
             }
-
+            if(ordersImportGoods.TotalPrice > 0)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể xóa đơn hàng này"
+                });
+            }
             _context.OrdersImportGoods.Remove(ordersImportGoods);
             await _context.SaveChangesAsync();
             return Ok(new Response

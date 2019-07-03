@@ -42,6 +42,7 @@ namespace WebsiteBanHang.ViewModels
         public decimal UnitPrice { get; set; }
         public int ProductId { get; set; }
         public string ProductName { get; set; }
+        public string ProductImages { get; set; }
     }
     public class OrderImportAllViewModel
     {

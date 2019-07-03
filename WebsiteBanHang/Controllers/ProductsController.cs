@@ -36,7 +36,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         [HttpGet("admin/[controller]")]
-        public async Task<IActionResult> GetProducts([FromQuery] int page, [FromQuery] int size, [FromQuery] string status,[FromQuery] string keyword, [FromQuery] string categoryid)
+        public async Task<IActionResult> GetProducts([FromQuery] int page, [FromQuery] int size, [FromQuery] string status, [FromQuery] string keyword, [FromQuery] string categoryid)
         {
             if (!ModelState.IsValid)
             {
@@ -51,7 +51,7 @@ namespace WebsiteBanHang.Controllers
             var products_map = _mapper.Map<List<ProductManage>>(products);
             if (Int32.TryParse(categoryid, out int cid))
             {
-                if(cid> 0)
+                if (cid > 0)
                 {
                     products_map = products_map.Where(p => p.CategoryId == cid).ToList();
                 }
@@ -117,10 +117,10 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            if(status == "discontinued" || status == "index")
+            if (status == "discontinued" || status == "index")
             {
                 var product = await _context.Products.FindAsync(id);
-                if(product == null)
+                if (product == null)
                 {
                     return Ok(new Response
                     {
@@ -129,7 +129,7 @@ namespace WebsiteBanHang.Controllers
                         Status = 404
                     });
                 }
-                if(status == "discontinued")
+                if (status == "discontinued")
                 {
                     product.Discontinued = !product.Discontinued;
                 }
@@ -235,18 +235,49 @@ namespace WebsiteBanHang.Controllers
             return Ok(rs);
         }
 
-        [HttpGet("products_show")]
-        public IQueryable<ProductsViewModel> GetProductsShow()//GetIndexProducts
+        [HttpGet("products/products-show")]
+        public async Task<IActionResult> GetProductsShow()//GetIndexProducts
         {
-            return _context.Products.Include(p => p.ProductImages).Where(u => u.DisplayIndex == true && u.Discontinued != true && u.Stock > 0).Select(item => new ProductsViewModel
+            if (!ModelState.IsValid)
             {
-                ProductId = item.ProductId,
-                ProductName = item.ProductName,
-                UnitPrice = item.UnitPrice,
-                Discount = item.Discount,
-                //Image = item.Image,
-                //Rate = item.Rate,
-                ProductImage = item.ProductImages
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            var products = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions)
+                .Where(p => p.Discontinued == false && p.Stock > 0 && p.DisplayIndex == true).ToListAsync();
+            List<ProductShowcaseViewModel> productShowcase = new List<ProductShowcaseViewModel>();
+            foreach (var product in products)
+            {
+                float star = 0;
+                int totalStar;
+                var evaluation = product.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == product.ProductId).ToList();
+                for (int i = 1; i <= 5; i++)
+                {
+                    star += i * evaluation.Where(e => e.Rate == i).Count();
+                }
+                totalStar = evaluation.Count();
+                if (totalStar > 0)
+                    star = star / totalStar;
+                else star = 0;
+                productShowcase.Add(new ProductShowcaseViewModel
+                {
+                    ProductId = product.ProductId,
+                    Discount = product.Discount,
+                    ProductName = product.ProductName,
+                    UnitPrice = product.UnitPrice,
+                    Rate = star,
+                    TotalRate = totalStar,
+                    Image = product.ProductImages.FirstOrDefault()?.Url
+                });
+            }
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = productShowcase
             });
         }
 
@@ -359,7 +390,7 @@ namespace WebsiteBanHang.Controllers
             }
 
             Products products = JsonConvert.DeserializeObject<Products>(product);
-            List<ImageDeleteViewModel> images = JsonConvert.DeserializeObject<List<ImageDeleteViewModel>> (imageDelete);
+            List<ImageDeleteViewModel> images = JsonConvert.DeserializeObject<List<ImageDeleteViewModel>>(imageDelete);
 
             if (id != products.ProductId)
             {
@@ -370,7 +401,7 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            
+
             _context.Entry(products).State = EntityState.Modified; //modify product
 
             var imageList = await Files.UploadAsync(files, _environment.ContentRootPath); //upload image
@@ -385,13 +416,13 @@ namespace WebsiteBanHang.Controllers
                 };
                 await _context.ProductImages.AddAsync(productImages);
             }
-            
-            foreach( var image in images)
+
+            foreach (var image in images)
             {
                 if (Files.Delete(image.Path, _environment.ContentRootPath))
                 {
                     var ProductImages = _context.ProductImages.Find(image.ImageId);
-                    if(ProductImages != null)
+                    if (ProductImages != null)
                         _context.ProductImages.Remove(ProductImages);
                 }
             }
@@ -447,7 +478,7 @@ namespace WebsiteBanHang.Controllers
             };
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
-            if(productAdd.OrderId > 0)
+            if (productAdd.OrderId > 0)
             {
                 var orderDetail = new OrderImportGoodsDetails
                 {
@@ -485,7 +516,7 @@ namespace WebsiteBanHang.Controllers
             });
             return StatusCode(201, new { orderId, product.ProductId });
 
-        }        
+        }
 
         // DELETE: api/Products/5
         [HttpDelete("[controller]/{id}")]

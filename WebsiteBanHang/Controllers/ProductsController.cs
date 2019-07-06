@@ -323,8 +323,16 @@ namespace WebsiteBanHang.Controllers
                 });
             }
             var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).SingleOrDefaultAsync(x => x.ProductId == id);
-            product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
-
+            //product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
+            if(product == null)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Sản phẩm không tồn tại"
+                });
+            }
             var product_map = _mapper.Map<ProductInformationViewModel>(product);
             float star = 0;
             var evaluation = product.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == product.ProductId).ToList();
@@ -349,8 +357,8 @@ namespace WebsiteBanHang.Controllers
         // GET: api/Products/5
 
 
-        [HttpGet("[controller]/quick-search/{keyword}")]
-        public async Task<IActionResult> GetProductByName([FromRoute] string keyword)
+        [HttpGet("[controller]/quick-search")]
+        public async Task<IActionResult> GetProductByName([FromQuery] string keyword)
         {
             if (!ModelState.IsValid)
             {
@@ -361,13 +369,22 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-
+            if(String.IsNullOrEmpty(keyword) || keyword == "undefined")
+            {
+                return Ok(new Response
+                {
+                    Status = 200,
+                    Module = new List<int>()
+                });
+            }
             var searchString = keyword.Split(' ');
             searchString = searchString.Select(x => x.ToLower()).ToArray();
-            var rs = await _context.Products.Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s)) && p.Discontinued == false && p.Stock > 0).Select(x => new
+            var rs = await _context.Products.Include(p => p.ProductImages).Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s)) && p.Discontinued == false && p.Stock > 0).Select(x => new
             {
                 x.ProductId,
-                x.ProductName
+                x.ProductName,
+                x.UnitPrice,
+                Image = x.ProductImages.FirstOrDefault(p => p.IsThumbnail == true).Url
             }).Take(5).ToListAsync();
             return Ok(new Response
             {

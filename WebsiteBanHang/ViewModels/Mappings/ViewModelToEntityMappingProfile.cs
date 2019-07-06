@@ -35,7 +35,8 @@ namespace WebsiteBanHang.ViewModels.Mappings
                 .ForMember(v => v.ProductName, map => map.MapFrom(c => c.Product.ProductName))
                 .ForMember(v => v.ProductImages, m => m.MapFrom(c => c.Product.ProductImages.FirstOrDefault(p => p.IsThumbnail == true).Url));
 
-            CreateMap<Products, ProductInformationViewModel>();
+            CreateMap<Products, ProductInformationViewModel>()
+                .ForMember(v => v.ProductImages, m => m.MapFrom(c => c.ProductImages.Where(p => p.IsThumbnail == true)));
 
             CreateMap<CartDetails, CartViewModel>().ForMember(v => v.ProductName, m => m.MapFrom(c => c.Product.ProductName))
                 .ForMember(v => v.UnitPrice, m => m.MapFrom(c => c.Product.UnitPrice))

@@ -142,7 +142,7 @@ namespace WebsiteBanHang.Controllers
             }
             var order = await _context.OrderDetails.Include(a => a.Order).Include(a => a.Product).ThenInclude(b =>b.ProductImages)
                 .Where(a => a.Order.UserId == userid && a.Order.Status == Globals.DA_GIAO)
-                .GroupBy(a => a.ProductId).Select(a => a.First()).ToListAsync();
+                .GroupBy(a => a.ProductId).Select(x => x.First()).ToListAsync();
             var product = _mapper.Map<List<ProductOrderViewModel>>(order);
 
             var review_history = await _context.EvaluationQuestions.Where(a => a.Rate != null && a.UserId == userid)

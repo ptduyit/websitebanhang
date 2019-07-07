@@ -392,6 +392,90 @@ namespace WebsiteBanHang.Controllers
                 Module = rs
             });
         }
+        [HttpGet("[controller]/search")]
+        public async Task<IActionResult> SearchProduct([FromQuery] string keyword, [FromQuery] int page, [FromQuery] string sort)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            if (String.IsNullOrEmpty(keyword) || keyword == "undefined")
+            {
+                return Ok(new Response
+                {
+                    Status = 200,
+                    Module = new List<int>()
+                });
+            }
+            int size = 10;
+            var searchString = keyword.Split(' ');
+            searchString = searchString.Select(x => x.ToLower()).ToArray();
+            var productsAll = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions)
+                .Where(p => searchString.All(s => p.ProductName.ToLower().Contains(s)) && p.Discontinued == false && p.Stock > 0).ToListAsync();
+            var productsAny = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions)
+                .Where(p => searchString.Count(s => p.ProductName.ToLower().Contains(s)) > 1 && p.Discontinued == false && p.Stock > 0).ToListAsync();
+            productsAll.AddRange(productsAny);
+            var products = productsAll.GroupBy(x => x.ProductId).Select(y => y.First()).ToList();
+            List<ProductShowcaseViewModel> productShowcase = new List<ProductShowcaseViewModel>();
+            foreach (var product in products)
+            {
+                float star = 0;
+                int totalStar;
+                var evaluation = product.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == product.ProductId).ToList();
+                for (int i = 1; i <= 5; i++)
+                {
+                    star += i * evaluation.Where(e => e.Rate == i).Count();
+                }
+                totalStar = evaluation.Count();
+                if (totalStar > 0)
+                    star = star / totalStar;
+                else star = 0;
+                productShowcase.Add(new ProductShowcaseViewModel
+                {
+                    ProductId = product.ProductId,
+                    Discount = product.Discount,
+                    ProductName = product.ProductName,
+                    UnitPrice = product.UnitPrice,
+                    Rate = star,
+                    TotalRate = totalStar,
+                    Image = product.ProductImages.FirstOrDefault()?.Url
+                });
+            }
+            switch (sort)
+            {
+                case "newest":
+                    productShowcase = productShowcase.OrderByDescending(p => p.ProductId).ToList();
+                    break;
+                case "discount":
+                    productShowcase = productShowcase.OrderByDescending(p => p.Discount).ToList();
+                    break;
+                case "priceasc":
+                    productShowcase = productShowcase.OrderBy(p => p.UnitPrice).ToList();
+                    break;
+                case "pricedesc":
+                    productShowcase = productShowcase.OrderByDescending(p => p.UnitPrice).ToList();
+                    break;
+            }
+            int totalProducts = productShowcase.Count();
+            int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product_page = productShowcase.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new
+            {
+                Paging = new Paging(totalProducts, page, size, totalPages),
+                Products = product_page
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
+        }
         // PUT: api/Products/5
         [HttpPut("admin/[controller]/{id}")]
         public async Task<IActionResult> PutProducts([FromForm] List<IFormFile> files, [FromRoute] int id, [FromForm] string product, [FromForm] string imageDelete)

@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
 using System.Data.Sql;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class StatisticController : ControllerBase
     {
         private readonly SaleDBContext _context;

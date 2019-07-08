@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class OrdersController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -24,18 +26,7 @@ namespace WebsiteBanHang.Controllers
             _context = context;
             _mapper = mapper;
         }
-
-        // GET: api/Orders
-        [HttpGet]
-        public IEnumerable<Orders> GetAllOrders()
-        {
-            return _context.Orders;
-        }
-        [HttpGet("{status}")]
-        public IEnumerable<Orders> GetConfirmOrders([FromRoute] int status)
-        {
-            return _context.Orders.Include(s => s.OrderStatus).Include(a => a.OrderDetails).ThenInclude(p => p.Product).Where(e => e.Status == status).ToList();
-        }
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("orders/update/{id}/{status}")]
         public async Task<IActionResult> PutConfirmOrders([FromRoute] int id, [FromRoute] int status)
         {
@@ -89,6 +80,7 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
+        [Authorize(Roles = "member,admin,employee")]
         [HttpGet("orders/cancel/{userid}/{orderid}")]
         public async Task<IActionResult> CancelOrderUser([FromRoute] int orderid, [FromRoute] Guid userid)
         {
@@ -157,37 +149,38 @@ namespace WebsiteBanHang.Controllers
             });
         }
         // GET: api/Orders/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
+        //[HttpGet("{id}")]
+        //public async Task<IActionResult> GetOrderByIdOrder([FromRoute] int id)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
 
-            var orders = await _context.Orders.FindAsync(id);
+        //    var orders = await _context.Orders.FindAsync(id);
 
-            if (orders == null)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 404,
-                    Message = "Không tìm thấy dữ liệu"
-                });
-            }
-            orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
-            return Ok(new Response
-            {
-                Status = 200,
-                Module = orders
-            });
-        }
+        //    if (orders == null)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 404,
+        //            Message = "Không tìm thấy dữ liệu"
+        //        });
+        //    }
+        //    orders.OrderDetails = await _context.OrderDetails.Where(e => e.OrderId == id).ToListAsync();
+        //    return Ok(new Response
+        //    {
+        //        Status = 200,
+        //        Module = orders
+        //    });
+        //}
+        [Authorize(Roles = "member,admin,employee")]
         [HttpGet("user/orders/{id}")]
         public async Task<IActionResult> GetOrderByIdUser([FromRoute] Guid id, [FromQuery] int status, [FromQuery] int page)
         {
@@ -232,6 +225,8 @@ namespace WebsiteBanHang.Controllers
                 Module = outputModel
             });
         }
+
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/orders/check-history/{id}")]
         public async Task<IActionResult> CheckHistotryOrder(Guid id)
         {
@@ -282,6 +277,7 @@ namespace WebsiteBanHang.Controllers
 
         }
 
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/orders")]
         public async Task<IActionResult> GetOrderByStatus([FromQuery] int status, [FromQuery] int page,[FromQuery] int id,[FromQuery] int size,[FromQuery] string sort)
         {
@@ -353,63 +349,63 @@ namespace WebsiteBanHang.Controllers
         }
 
         // PUT: api/Orders/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrders([FromRoute] int id, [FromBody] Orders orders)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
+        //[HttpPut("{id}")]
+        //public async Task<IActionResult> PutOrders([FromRoute] int id, [FromBody] Orders orders)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
 
-            if (id != orders.OrderId)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
+        //    if (id != orders.OrderId)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
 
-            _context.Entry(orders).State = EntityState.Modified;
+        //    _context.Entry(orders).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!OrdersExists(id))
-                {
-                    return Ok(new Response
-                    {
-                        IsError = true,
-                        Status = 404,
-                        Message = "Không tìm thấy dữ liệu"
-                    });
-                }
-                else
-                {
-                    return Ok(new Response
-                    {
-                        IsError = true,
-                        Status = 400,
-                        Message = "Không thể lưu dữ liệu"
-                    });
-                    throw;
-                }
-            }
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        if (!OrdersExists(id))
+        //        {
+        //            return Ok(new Response
+        //            {
+        //                IsError = true,
+        //                Status = 404,
+        //                Message = "Không tìm thấy dữ liệu"
+        //            });
+        //        }
+        //        else
+        //        {
+        //            return Ok(new Response
+        //            {
+        //                IsError = true,
+        //                Status = 400,
+        //                Message = "Không thể lưu dữ liệu"
+        //            });
+        //            throw;
+        //        }
+        //    }
 
-            return Ok(new Response
-            {
-                Status = 204
-            });
-        }
+        //    return Ok(new Response
+        //    {
+        //        Status = 204
+        //    });
+        //}
         public bool ListEquals(List<CartOrderViewModel> list1, List<CartOrderViewModel> list2)
         {
             var cnt = new Dictionary<CartOrderViewModel, int>(new CartEqualityComparer());
@@ -439,6 +435,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // POST: api/Orders
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPost("orders/{addressId}")]
         public async Task<IActionResult> PostOrders([FromBody] List<CartOrderViewModel> cartClient, int addressId)
         {
@@ -582,38 +579,38 @@ namespace WebsiteBanHang.Controllers
         }
 
         // DELETE: api/Orders/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrders([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteOrders([FromRoute] int id)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
 
-            var orders = await _context.Orders.FindAsync(id);
-            if (orders == null)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 404,
-                    Message = "Không tìm thấy dữ liệu"
-                });
-            }
+        //    var orders = await _context.Orders.FindAsync(id);
+        //    if (orders == null)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 404,
+        //            Message = "Không tìm thấy dữ liệu"
+        //        });
+        //    }
 
-            _context.Orders.Remove(orders);
-            await _context.SaveChangesAsync();
+        //    _context.Orders.Remove(orders);
+        //    await _context.SaveChangesAsync();
 
-            return Ok(new Response
-            {
-                Status = 204
-            });
-        }
+        //    return Ok(new Response
+        //    {
+        //        Status = 204
+        //    });
+        //}
 
         private bool OrdersExists(int id)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/ProductCategories
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/category/select-full")]
         public async Task<IActionResult> GetCategorySelectAll()
         {
@@ -85,6 +87,7 @@ namespace WebsiteBanHang.Controllers
         //        Status = 200
         //    });
         //}
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/category/select-product")]
         public async Task<IActionResult> GetCategorySelectProduct()
         {
@@ -109,6 +112,7 @@ namespace WebsiteBanHang.Controllers
                 Module = category
             });
         }
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/category/check-url/{url}")]
         public async Task<IActionResult> CheckUrl(string url)
         {
@@ -132,6 +136,8 @@ namespace WebsiteBanHang.Controllers
                 Status = 400
             });
         }
+
+        [AllowAnonymous]
         [HttpGet("menu/category")]
         public async Task<IActionResult> GetMenu()
         {
@@ -153,6 +159,7 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpGet("category/{url}")]
         public async Task<IActionResult> GetProductCategoriesByUrl([FromRoute] string url, [FromQuery] int page, [FromQuery] string order)
         {
@@ -331,6 +338,7 @@ namespace WebsiteBanHang.Controllers
         //}
 
         // PUT: api/ProductCategories/5
+        [Authorize(Roles = "admin,employee")]
         [HttpPut("category/{id}")]
         public async Task<IActionResult> PutProductCategories([FromRoute] int id, [FromBody] ProductCategories productCategories)
         {
@@ -389,6 +397,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // POST: api/ProductCategories
+        [Authorize(Roles = "admin,employee")]
         [HttpPost("admin/category")]
         public async Task<IActionResult> PostProductCategories([FromBody] ProductCategories productCategories)
         {
@@ -409,10 +418,10 @@ namespace WebsiteBanHang.Controllers
                 Status = 201,
                 Module = productCategories.CategoryId
             });
-            return StatusCode(201, new { id = productCategories.CategoryId });
         }
 
         // DELETE: api/ProductCategories/5
+        [Authorize(Roles = "admin,employee")]
         [HttpDelete("category/{id}")]
         public async Task<IActionResult> DeleteProductCategories([FromRoute] int id)
         {

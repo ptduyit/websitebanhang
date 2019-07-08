@@ -12,6 +12,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class EventsController : ControllerBase
     {
         private readonly SaleDBContext _context;

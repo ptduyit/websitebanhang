@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/userinfo")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class UserInfoesController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -25,13 +27,13 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/UserInfoes
-        [HttpGet]
-        public IActionResult GetUser()
-        {
-            var query = _context.UserInfo.Join(_context.User, u => u.UserId, i => i.Id,
-                (u, i) => new { u.UserId, i.PhoneNumber, u.Gender, u.FullName, u.BirthDate, i.Email });
-            return Ok(query);
-        }
+        //[HttpGet]
+        //public IActionResult GetUser()
+        //{
+        //    var query = _context.UserInfo.Join(_context.User, u => u.UserId, i => i.Id,
+        //        (u, i) => new { u.UserId, i.PhoneNumber, u.Gender, u.FullName, u.BirthDate, i.Email });
+        //    return Ok(query);
+        //}
 
         // GET: api/UserInfoes/5
         [HttpGet("{id}")]

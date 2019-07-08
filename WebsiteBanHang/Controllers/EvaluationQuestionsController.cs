@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api")]
     [ApiController]
+
     public class EvaluationQuestionsController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -23,7 +25,7 @@ namespace WebsiteBanHang.Controllers
             _context = context;
             _mapper = mapper;
         }
-
+        [AllowAnonymous]
         [HttpGet("evaluations")]
         public async Task<IActionResult> GetEvaluation([FromQuery] int productid, [FromQuery] int pagenumber)
         {
@@ -87,8 +89,8 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
-        [HttpGet("{productid}/{pagenumber}")]
-        public async Task<IActionResult> GetEQuestions([FromRoute] int productid, [FromRoute] int pagenumber)
+        [HttpGet("questions")]
+        public async Task<IActionResult> GetQuestions([FromQuery] int productid, [FromQuery] int page)
         {
             if (!ModelState.IsValid)
             {
@@ -113,12 +115,12 @@ namespace WebsiteBanHang.Controllers
                 });
             }
             var question_map = _mapper.Map<List<EvaluationQuestionsViewModel>>(evaluationQuestions);
-            var question = question_map.Skip(size * (pagenumber - 1)).Take(size).ToList();
+            var question = question_map.Skip(size * (page - 1)).Take(size).ToList();
             int totalQuestion = question_map.Count();
             int totalPages = (int)Math.Ceiling(totalQuestion / (float)size);
             var output = new QuestionOutputViewModel
             {
-                Paging = new Paging(totalQuestion, pagenumber, size, totalPages),
+                Paging = new Paging(totalQuestion, page, size, totalPages),
                 Questions = question
             };
             return Ok(new Response
@@ -127,6 +129,8 @@ namespace WebsiteBanHang.Controllers
                 Module = output
             });
         }
+
+        [Authorize(Roles = "member,admin,employee")]
         [HttpGet("not-review/{userid}")]
         public async Task<IActionResult> GetNotReviewUser(Guid userid, [FromQuery] int page)
         {
@@ -166,6 +170,8 @@ namespace WebsiteBanHang.Controllers
             });
 
         }
+
+        [Authorize(Roles = "member,admin,employee")]
         [HttpGet("review-history/{userid}")]
         public async Task<IActionResult> GetHistoryReviewUser(Guid userid, [FromQuery] int page)
         {
@@ -201,6 +207,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // PUT: api/EvaluationQuestions/5
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutEvaluationQuestions([FromRoute] int id, [FromBody] EvaluationQuestions evaluationQuestions)
         {
@@ -252,6 +259,8 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
+
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPost("review/add")]
         public async Task<IActionResult> PostPutReview([FromBody] EvaluationQuestions evaluation)
         {
@@ -294,6 +303,7 @@ namespace WebsiteBanHang.Controllers
             });
         }
         // POST: api/EvaluationQuestions
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPost]
         public async Task<IActionResult> PostEvaluationQuestions([FromBody] EvaluationQuestions evaluation)
         {
@@ -329,7 +339,8 @@ namespace WebsiteBanHang.Controllers
         }
 
         // DELETE: api/EvaluationQuestions/5
-        [HttpDelete("{id}")]
+        [Authorize(Roles = "member,admin,employee")]
+        [HttpDelete("questions/{id}")]
         public async Task<IActionResult> DeleteEvaluationQuestions([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -374,6 +385,7 @@ namespace WebsiteBanHang.Controllers
                 Module = evaluationQuestions
             });
         }
+
         [HttpGet("comments/{id}")]
         public async Task<IActionResult> GetComments(int id)
         {
@@ -403,6 +415,8 @@ namespace WebsiteBanHang.Controllers
                 Module = comment_map
             });
         }
+
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPost("comments")]
         public async Task<IActionResult> PostComment(Comments comments)
         {

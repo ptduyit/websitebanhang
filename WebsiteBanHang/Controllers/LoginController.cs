@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +20,7 @@ namespace WebsiteBanHang.Controllers
     
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class LoginController : Controller
     {
         private readonly UserManager<User> _userManager;

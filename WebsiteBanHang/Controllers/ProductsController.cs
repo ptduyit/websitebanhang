@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ namespace WebsiteBanHang.Controllers
             _environment = environment;
             _hubContext = hubContext;
         }
-
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/[controller]")]
         public async Task<IActionResult> GetProducts([FromQuery] int page, [FromQuery] int size, [FromQuery] string status, [FromQuery] string keyword, [FromQuery] string categoryid)
         {
@@ -105,6 +106,7 @@ namespace WebsiteBanHang.Controllers
             });
 
         }
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/change-status/{id}/{status}")]
         public async Task<IActionResult> ChangeStatus(int id, string status)
         {
@@ -163,7 +165,7 @@ namespace WebsiteBanHang.Controllers
                 Message = "Sai dữ liệu đầu vào"
             });
         }
-
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/[controller]/{id}")]
         public async Task<IActionResult> GetProductById([FromRoute] int id)
         {
@@ -203,7 +205,7 @@ namespace WebsiteBanHang.Controllers
                 Module = result
             });
         }
-
+        [Authorize(Roles = "admin,employee")]
         [HttpGet("admin/[controller]/search/{keyword}")]
         public async Task<IActionResult> Recommend([FromRoute] string keyword)
         {
@@ -234,7 +236,7 @@ namespace WebsiteBanHang.Controllers
             }).ToListAsync();
             return Ok(rs);
         }
-
+        [AllowAnonymous]
         [HttpGet("products/products-show")]
         public async Task<IActionResult> GetProductsShow()//GetIndexProducts
         {
@@ -300,6 +302,7 @@ namespace WebsiteBanHang.Controllers
         //        Module = stock
         //    });
         //}
+        [AllowAnonymous]
         [HttpGet("[controller]/{id}")]
         public async Task<IActionResult> GetProductInformation([FromRoute] int id)
         {
@@ -356,7 +359,7 @@ namespace WebsiteBanHang.Controllers
         }
         // GET: api/Products/5
 
-
+        [AllowAnonymous]
         [HttpGet("[controller]/quick-search")]
         public async Task<IActionResult> GetProductByName([FromQuery] string keyword)
         {
@@ -392,6 +395,7 @@ namespace WebsiteBanHang.Controllers
                 Module = rs
             });
         }
+        [AllowAnonymous]
         [HttpGet("[controller]/search")]
         public async Task<IActionResult> SearchProduct([FromQuery] string keyword, [FromQuery] int page, [FromQuery] string sort)
         {
@@ -477,6 +481,7 @@ namespace WebsiteBanHang.Controllers
             });
         }
         // PUT: api/Products/5
+        [Authorize(Roles = "admin,employee")]
         [HttpPut("admin/[controller]/{id}")]
         public async Task<IActionResult> PutProducts([FromForm] List<IFormFile> files, [FromRoute] int id, [FromForm] string product, [FromForm] string imageDelete)
         {
@@ -559,6 +564,7 @@ namespace WebsiteBanHang.Controllers
                 Status = 204
             });
         }
+        [Authorize(Roles = "admin,employee")]
         [HttpPost("admin/[controller]/quick-add")]
         public async Task<IActionResult> QuickAddProduct(QuickAddProductViewModel productAdd)
         {
@@ -615,11 +621,10 @@ namespace WebsiteBanHang.Controllers
                 Status = 201,
                 Module = new { orderId, product.ProductId }
             });
-            return StatusCode(201, new { orderId, product.ProductId });
-
         }
 
         // DELETE: api/Products/5
+        [Authorize(Roles = "admin,employee")]
         [HttpDelete("[controller]/{id}")]
         public async Task<IActionResult> DeleteProducts([FromRoute] int id)
         {

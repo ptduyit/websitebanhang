@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class OrderDetailsController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -21,12 +23,7 @@ namespace WebsiteBanHang.Controllers
             _context = context;
         }
 
-        // GET: api/OrderDetails
-        [HttpGet]
-        public IEnumerable<OrderDetails> GetOrderDetails()
-        {
-            return _context.OrderDetails;
-        }
+
         [HttpGet("{orderId}/{productId}")]
         public async Task<IActionResult> ExistOrderDetails([FromRoute] int orderId, [FromRoute] int productId)
         {

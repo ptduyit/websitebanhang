@@ -17,6 +17,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "admin")]
     public class UsersController : Controller
     {
         private readonly SaleDBContext _context;
@@ -97,6 +98,7 @@ namespace WebsiteBanHang.Controllers
             });
 
         }
+
         [HttpGet("change-role/{id}/{role}")]
         public async Task<IActionResult> ChangeRole(Guid id, string role)
         {
@@ -178,6 +180,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // PUT: api/Users/5
+        [Authorize(Roles = "member,admin,employee")]
         [HttpPut("changepassword/{id}")]
         public async Task<IActionResult> ChangePassword([FromRoute] Guid id, [FromBody] Password password)
         {
@@ -234,6 +237,7 @@ namespace WebsiteBanHang.Controllers
 
         // POST: api/Users
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> PostRegister([FromBody] RegistrationViewModel model)
         {
             if (!ModelState.IsValid)

@@ -9,10 +9,13 @@ using Microsoft.EntityFrameworkCore;
 using WebsiteBanHang.Models;
 using WebsiteBanHang.ViewModels;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+
 namespace WebsiteBanHang.Controllers
 {
     [Route("api")]
     [ApiController]
+    [Authorize(Roles = "member,admin,employee")]
     public class CartDetailsController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -263,37 +266,37 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
-        [HttpDelete("{userId}")]
-        public async Task<IActionResult> DeleteCart([FromRoute] Guid userId)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 400,
-                    Message = "Sai dữ liệu đầu vào"
-                });
-            }
+        //[HttpDelete("{userId}")]
+        //public async Task<IActionResult> DeleteCart([FromRoute] Guid userId)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 400,
+        //            Message = "Sai dữ liệu đầu vào"
+        //        });
+        //    }
 
-            var cartDetails = await _context.CartDetails.Where(e => e.UserId == userId).ToListAsync();
-            if (cartDetails == null)
-            {
-                return Ok(new Response
-                {
-                    IsError = true,
-                    Status = 404
-                });
-            }
+        //    var cartDetails = await _context.CartDetails.Where(e => e.UserId == userId).ToListAsync();
+        //    if (cartDetails == null)
+        //    {
+        //        return Ok(new Response
+        //        {
+        //            IsError = true,
+        //            Status = 404
+        //        });
+        //    }
 
-            _context.CartDetails.RemoveRange(cartDetails);
-            await _context.SaveChangesAsync();
+        //    _context.CartDetails.RemoveRange(cartDetails);
+        //    await _context.SaveChangesAsync();
 
-            return Ok(new Response
-            {
-                Status = 204
-            });
-        }
+        //    return Ok(new Response
+        //    {
+        //        Status = 204
+        //    });
+        //}
         private bool CartDetailsExists(Guid id, int productId)
         {
             return _context.CartDetails.Any(e => e.UserId == id && e.ProductId == productId);

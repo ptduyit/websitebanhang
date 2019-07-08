@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace WebsiteBanHang.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "admin,employee")]
     public class SlideShowsController : ControllerBase
     {
         private readonly SaleDBContext _context;
@@ -25,6 +27,7 @@ namespace WebsiteBanHang.Controllers
         }
 
         // GET: api/SlideShows
+        [AllowAnonymous]
         [HttpGet]
         public IEnumerable<SlideShow> GetSlideShow()
         {

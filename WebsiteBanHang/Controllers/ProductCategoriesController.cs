@@ -133,7 +133,7 @@ namespace WebsiteBanHang.Controllers
                 });
             return Ok(new Response
             {
-                Status = 400
+                Status = 406
             });
         }
 

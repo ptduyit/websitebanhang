@@ -191,12 +191,12 @@ namespace WebsiteBanHang.Controllers
                     Message = "Không tìm thấy dữ liệu"
                 });
             }
-            var price = products.OrderImportGoodsDetails.OrderByDescending(x => x.OrderId).Take(1).FirstOrDefault();
+            var price = products.OrderImportGoodsDetails.OrderByDescending(x => x.OrderId).Take(1).Select(x => x.UnitPrice).FirstOrDefault();
 
             var result = new ProductPriceImportViewModel
             {
                 Products = products,
-                PriceImport = price.UnitPrice
+                PriceImport = price
             };
 
             return Ok(new Response
@@ -283,6 +283,69 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
+        [AllowAnonymous]
+        [HttpGet("products/recommended")]
+        public async Task<IActionResult> GetProductsRecommended([FromQuery] int page)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+            int size = 2;
+            var randomstring = DateTime.Today;
+            var seed = randomstring.GetHashCode();
+            var random = new Random(seed);
+            var products = await _context.Products
+                .Include(p => p.ProductImages)
+                .Include(p => p.EvaluationQuestions)
+                .Where(p => p.Discontinued == false && p.Stock > 0 && p.DisplayIndex == true)
+                .ToListAsync();
+            products = products.AsEnumerable().OrderBy(p => random.Next()).ToList();
+            List<ProductShowcaseViewModel> productShowcase = new List<ProductShowcaseViewModel>();
+            foreach (var product in products)
+            {
+                float star = 0;
+                int totalStar;
+                var evaluation = product.EvaluationQuestions.Where(e => e.Rate != null && e.ProductId == product.ProductId).ToList();
+                for (int i = 1; i <= 5; i++)
+                {
+                    star += i * evaluation.Where(e => e.Rate == i).Count();
+                }
+                totalStar = evaluation.Count();
+                if (totalStar > 0)
+                    star = star / totalStar;
+                else star = 0;
+                productShowcase.Add(new ProductShowcaseViewModel
+                {
+                    ProductId = product.ProductId,
+                    Discount = product.Discount,
+                    ProductName = product.ProductName,
+                    UnitPrice = product.UnitPrice,
+                    Rate = star,
+                    TotalRate = totalStar,
+                    Image = product.ProductImages.FirstOrDefault()?.Url
+                });
+            }
+            int totalProducts = productShowcase.Count();
+            int totalPages = (int)Math.Ceiling(totalProducts / (float)size);
+            page = (page < 1) ? 1 : ((page > totalPages) ? totalPages : page);
+            var product_page = productShowcase.Skip(size * (page - 1)).Take(size).ToList();
+            var output = new
+            {
+                Paging = new Paging(totalProducts, page, size, totalPages),
+                Products = product_page
+            };
+            return Ok(new Response
+            {
+                Status = 200,
+                Module = output
+            });
+        }
         //[HttpGet("{id}")]
         //public async Task<IActionResult> GetStockProduct([FromRoute] int id)
         //{
@@ -327,7 +390,7 @@ namespace WebsiteBanHang.Controllers
             }
             var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).SingleOrDefaultAsync(x => x.ProductId == id);
             //product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
-            if(product == null)
+            if (product == null)
             {
                 return Ok(new Response
                 {
@@ -372,7 +435,7 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            if(String.IsNullOrEmpty(keyword) || keyword == "undefined")
+            if (String.IsNullOrEmpty(keyword) || keyword == "undefined")
             {
                 return Ok(new Response
                 {
@@ -623,6 +686,60 @@ namespace WebsiteBanHang.Controllers
             });
         }
 
+        [Authorize(Roles = "admin,employee")]
+        [HttpPost("admin/[controller]/add")]
+        public async Task<IActionResult> AddProduct([FromForm] List<IFormFile> files, [FromForm] string product)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 400,
+                    Message = "Sai dữ liệu đầu vào"
+                });
+            }
+
+            Products products = JsonConvert.DeserializeObject<Products>(product);
+            products.CreateAt = DateTime.Now;
+            products.Discontinued = true;
+            products.DisplayIndex = false;
+            products.Stock = 0;
+            products.UnitPrice = 0;
+            _context.Products.Add(products);
+
+            var imageList = await Files.UploadAsync(files, _environment.ContentRootPath); //upload image
+            foreach (var image in imageList)
+            {
+                var productImages = new ProductImages
+                {
+                    ProductId = products.ProductId,
+                    Url = image,
+                    IsThumbnail = true,
+                    CreateAt = DateTime.Now
+                };
+                await _context.ProductImages.AddAsync(productImages);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 409,
+                    Message = "Không thể lưu dữ liệu"
+                });
+            }
+
+            return Ok(new Response
+            {
+                Status = 201
+            });
+        }
         // DELETE: api/Products/5
         [Authorize(Roles = "admin,employee")]
         [HttpDelete("[controller]/{id}")]

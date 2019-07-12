@@ -30,7 +30,7 @@ namespace WebsiteBanHang.Controllers
         [HttpGet("order-import")]
         public async Task<IActionResult> GetOrdersImportGoods([FromQuery] string type, [FromQuery] string keyword, [FromQuery] bool temporary,[FromQuery] int page)
         {
-            int size = 3;
+            int size = 10;
             if (!ModelState.IsValid)
             {
                 return Ok(new Response

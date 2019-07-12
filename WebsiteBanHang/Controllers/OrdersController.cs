@@ -246,7 +246,7 @@ namespace WebsiteBanHang.Controllers
             int percent = 0;
             if(totalOrder > 0)
             {
-                percent = (success / totalOrder)*100;
+                percent = (success * 100) / totalOrder;
             }
 
             var rate = await _context.EvaluationQuestions.Where(p => p.UserId == id && p.Rate != null).ToListAsync();

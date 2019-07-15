@@ -296,14 +296,14 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            int size = 2;
+            int size = 6;
             var randomstring = DateTime.Today;
             var seed = randomstring.GetHashCode();
             var random = new Random(seed);
             var products = await _context.Products
                 .Include(p => p.ProductImages)
                 .Include(p => p.EvaluationQuestions)
-                .Where(p => p.Discontinued == false && p.Stock > 0 && p.DisplayIndex == true)
+                .Where(p => p.Discontinued == false && p.Stock > 0)
                 .ToListAsync();
             products = products.AsEnumerable().OrderBy(p => random.Next()).ToList();
             List<ProductShowcaseViewModel> productShowcase = new List<ProductShowcaseViewModel>();

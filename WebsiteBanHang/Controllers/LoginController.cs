@@ -57,6 +57,16 @@ namespace WebsiteBanHang.Controllers
                     Message = "Tài khoản hoặc mật khẩu không tồn tại"
                 });
             }
+            bool result = await _userManager.CheckPasswordAsync(user, credentials.Password);
+            if (!result)
+            {
+                return Ok(new Response
+                {
+                    IsError = true,
+                    Status = 404,
+                    Message = "Tài khoản hoặc mật khẩu không tồn tại"
+                });
+            }
             var userInfo = await _context.UserInfo.FindAsync(user.Id);
             var jwt = await Tokens.GenerateJwt(user, userInfo.FullName, _jwtOptions,_userManager);
             return Ok(new Response

@@ -296,7 +296,7 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            int size = 6;
+            int size = 12;
             var randomstring = DateTime.Today;
             var seed = randomstring.GetHashCode();
             var random = new Random(seed);
@@ -388,7 +388,7 @@ namespace WebsiteBanHang.Controllers
                     n.GetStock(i);
                 });
             }
-            var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).SingleOrDefaultAsync(x => x.ProductId == id);
+            var product = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions).Where(x => x.ProductId == id && x.Discontinued == false).SingleOrDefaultAsync();
             //product.ProductImages = product.ProductImages.Where(p => p.IsThumbnail == true).ToList();
             if (product == null)
             {
@@ -479,7 +479,7 @@ namespace WebsiteBanHang.Controllers
                     Module = new List<int>()
                 });
             }
-            int size = 10;
+            int size = 12;
             var searchString = keyword.Split(' ');
             searchString = searchString.Select(x => x.ToLower()).ToArray();
             var productsAll = await _context.Products.Include(p => p.ProductImages).Include(p => p.EvaluationQuestions)

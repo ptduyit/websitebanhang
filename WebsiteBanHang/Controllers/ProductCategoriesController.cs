@@ -172,7 +172,7 @@ namespace WebsiteBanHang.Controllers
                     Message = "Sai dữ liệu đầu vào"
                 });
             }
-            int size = 10;
+            int size = 12;
 
             var ctg = await _context.ProductCategories.Include(p => p.Products).ThenInclude(i => i.ProductImages)
                 .Include(p => p.CategoryChildrens)
